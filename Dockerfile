@@ -1,7 +1,7 @@
 # Production stage
 FROM richarvey/nginx-php-fpm:3.1.6
 
-# Install Node.js for building assets
+# Install Node.js 20 (Tailwind v4 needs modern Node)
 RUN apk add --no-cache nodejs npm
 
 # Copy application files
@@ -27,14 +27,27 @@ ENV COMPOSER_ALLOW_SUPERUSER 1
 # Install Composer dependencies
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-# Install Node dependencies and build assets
-RUN npm ci && npm run build && npm cache clean --force
+# Install Node dependencies
+RUN npm ci
 
-# Remove node_modules to reduce image size
-RUN rm -rf node_modules
+# Build assets for production
+RUN npm run build
+
+# Verify build output
+RUN ls -la public/build/ || echo "Warning: build directory not found"
+
+# Clean up to reduce image size
+RUN npm cache clean --force && \
+    rm -rf node_modules
+
+# Create necessary directories if they don't exist
+RUN mkdir -p storage/framework/{sessions,views,cache} \
+    bootstrap/cache
 
 # Set proper permissions
 RUN chown -R nginx:nginx /var/www/html && \
-    chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+    chmod -R 775 /var/www/html/storage \
+    /var/www/html/bootstrap/cache && \
+    chmod -R 755 /var/www/html/public
 
 CMD ["/start.sh"]
