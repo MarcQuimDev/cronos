@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan:*)",
+      "Bash(dir:*)",
+      "Bash(composer install:*)",
+      "Bash(if exist publicindex.php echo File exists)",
+      "Bash(php -S:*)",
+      "Bash(if exist node_modules echo Dependencies installed)",
+      "Bash(test:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
