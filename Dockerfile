@@ -1,13 +1,33 @@
+# Build stage for assets
+FROM node:20-alpine AS node-builder
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install Node dependencies
+RUN npm ci
+
+# Copy source files for building
+COPY resources ./resources
+COPY public ./public
+COPY vite.config.js postcss.config.js tailwind.config.js ./
+
+# Build assets
+RUN npm run build && \
+    ls -la public/build/ || echo "Build directory not found"
+
 # Production stage
 FROM richarvey/nginx-php-fpm:3.1.6
 
-# Install Node.js 20 (Tailwind v4 needs modern Node)
-RUN apk add --no-cache nodejs npm
+WORKDIR /var/www/html
 
 # Copy application files
 COPY . /var/www/html
 
-WORKDIR /var/www/html
+# Copy built assets from node-builder
+COPY --from=node-builder /app/public/build /var/www/html/public/build
 
 # Image config
 ENV SKIP_COMPOSER 1
@@ -26,19 +46,6 @@ ENV COMPOSER_ALLOW_SUPERUSER 1
 
 # Install Composer dependencies
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-
-# Install Node dependencies
-RUN npm ci
-
-# Build assets for production
-RUN npm run build
-
-# Verify build output
-RUN ls -la public/build/ || echo "Warning: build directory not found"
-
-# Clean up to reduce image size
-RUN npm cache clean --force && \
-    rm -rf node_modules
 
 # Create necessary directories if they don't exist
 RUN mkdir -p storage/framework/{sessions,views,cache} \
