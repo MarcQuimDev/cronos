@@ -9,7 +9,13 @@
       "Bash(if exist node_modules echo Dependencies installed)",
       "Bash(test:*)",
       "Bash(npm install:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(if exist vendor echo Dependencies installed)",
+      "Bash(if exist .env echo File exists)",
+      "Bash(php -v:*)",
+      "Bash(cp:*)",
+      "Bash(composer config:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
