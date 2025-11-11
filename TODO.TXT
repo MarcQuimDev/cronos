@@ -1,3 +1,4 @@
 - No hi haura login
 - Mostrar taules diferents (temperatura i humitat)
 - Dashboard professional
+asd
