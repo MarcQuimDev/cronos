@@ -15,7 +15,9 @@
       "Bash(php -v:*)",
       "Bash(cp:*)",
       "Bash(composer config:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(.gitignore)"
     ],
     "deny": [],
     "ask": []
