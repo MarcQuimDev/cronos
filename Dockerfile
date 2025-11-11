@@ -15,8 +15,11 @@ COPY public ./public
 COPY vite.config.js postcss.config.js tailwind.config.js ./
 
 # Build assets
-RUN npm run build && \
-    ls -la public/build/ || echo "Build directory not found"
+RUN npm run build
+
+# Verify build output - CRITICAL: manifest.json must exist
+RUN test -f public/build/manifest.json || (echo "ERROR: manifest.json not found!" && exit 1)
+RUN ls -la public/build/
 
 # Production stage
 FROM richarvey/nginx-php-fpm:3.1.6
@@ -28,6 +31,10 @@ COPY . /var/www/html
 
 # Copy built assets from node-builder
 COPY --from=node-builder /app/public/build /var/www/html/public/build
+
+# Verify manifest exists after copy
+RUN test -f public/build/manifest.json || (echo "ERROR: manifest.json not copied!" && exit 1)
+RUN echo "✓ Build assets copied successfully" && ls -la public/build/
 
 # Image config
 ENV SKIP_COMPOSER 1
