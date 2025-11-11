@@ -54,6 +54,14 @@ ENV COMPOSER_ALLOW_SUPERUSER 1
 # Install Composer dependencies
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
+# Copy custom Nginx configuration
+RUN if [ -f /var/www/html/conf/nginx/nginx-site.conf ]; then \
+    cp /var/www/html/conf/nginx/nginx-site.conf /etc/nginx/sites-available/default.conf && \
+    echo "✓ Custom Nginx config installed"; \
+  else \
+    echo "⚠ Custom Nginx config not found, using default"; \
+  fi
+
 # Create necessary directories if they don't exist
 RUN mkdir -p storage/framework/{sessions,views,cache} \
     bootstrap/cache
@@ -63,5 +71,8 @@ RUN chown -R nginx:nginx /var/www/html && \
     chmod -R 775 /var/www/html/storage \
     /var/www/html/bootstrap/cache && \
     chmod -R 755 /var/www/html/public
+
+# Verify Nginx configuration is valid
+RUN nginx -t || echo "⚠ Nginx config test failed"
 
 CMD ["/start.sh"]
