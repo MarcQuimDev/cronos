@@ -9,7 +9,7 @@ export default defineConfig({
         }),
     ],
     build: {
-        manifest: true,
+        manifest: "manifest.json",  // ← Així genera manifest.json directament
         outDir: 'public/build',
         rollupOptions: {
             output: {
@@ -17,5 +17,4 @@ export default defineConfig({
             },
         },
     },
-    base: '/build/',
 });
