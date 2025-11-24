@@ -9,7 +9,7 @@ export default defineConfig({
         }),
     ],
     build: {
-        manifest: 'manifest.json', // Generate manifest in root of build directory
+        manifest: true,
         outDir: 'public/build',
         rollupOptions: {
             output: {
