@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cronos - Dashboard</title>
+    <title>Cronos - Temperatura</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-neutral-950">
@@ -29,8 +29,8 @@
                         <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Inicio</span>
                     </a>
 
-                    <a href="/temperature" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="Temperatura">
-                        <svg class="h-6 w-6 text-cyan-400 group-hover:text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="/temperature" class="flex items-center gap-3 px-3 py-3 rounded-xl bg-neutral-800 text-white transition-all duration-300 group border border-cyan-500/50" title="Temperatura">
+                        <svg class="h-6 w-6 text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                         <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Temperatura</span>
@@ -63,71 +63,70 @@
             <!-- Header - Sticky -->
             <header class="sticky top-0 bg-neutral-900/95 backdrop-blur-sm shadow-lg border-b border-neutral-800 z-30">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <h1 class="text-3xl font-bold text-white">Cronos TDR - Dashboard de Sensores</h1>
+                    <h1 class="text-3xl font-bold text-white">Datos de Temperatura</h1>
                 </div>
             </header>
 
             <!-- Main Content -->
             <div class="flex-1">
-
-            <!-- Main Content -->
             <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <!-- Statistics Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 px-4 sm:px-0">
-                    <!-- Temperature Card -->
-                    <div class="bg-neutral-900 overflow-hidden shadow-xl rounded-lg border border-neutral-800 hover:border-cyan-500/50 transition-all duration-200">
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-8 w-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                    </svg>
-                                </div>
-                                <div class="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-neutral-400 truncate">Última Lectura - Temperatura</dt>
-                                        <dd class="text-3xl font-semibold text-white">{{ $temperatureData->count() > 0 ? number_format($temperatureData->first()->temperatura, 2) : '0' }}°C</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Humidity Card -->
-                    <div class="bg-neutral-900 overflow-hidden shadow-xl rounded-lg border border-neutral-800 hover:border-cyan-500/50 transition-all duration-200">
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-8 w-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                                    </svg>
-                                </div>
-                                <div class="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-neutral-400 truncate">Última Lectura - Humedad</dt>
-                                        <dd class="text-3xl font-semibold text-white">{{ $humidityData->count() > 0 ? number_format($humidityData->first()->humitat, 2) : '0' }}%</dd>
-                                    </dl>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pressure Card -->
-                    <div class="bg-neutral-900 overflow-hidden shadow-xl rounded-lg border border-neutral-800 hover:border-cyan-500/50 transition-all duration-200">
-                        <div class="p-6">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-8 w-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                    </svg>
-                                </div>
-                                <div class="ml-5 w-0 flex-1">
-                                    <dl>
-                                        <dt class="text-sm font-medium text-neutral-400 truncate">Última Lectura - Presión</dt>
-                                        <dd class="text-3xl font-semibold text-white">{{ $pressureData->count() > 0 ? number_format($pressureData->first()->pressio, 2) : '0' }} hPa</dd>
-                                    </dl>
-                                </div>
-                            </div>
+                <div class="px-4 sm:px-0">
+                    <div class="bg-neutral-900 shadow-xl rounded-lg overflow-hidden border border-neutral-800">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-neutral-800">
+                                <thead class="bg-black/30">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                                            Topic
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                                            Tipo de Sensor
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                                            Temperatura (°C)
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                                            Ubicación
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
+                                            Fecha/Hora
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-neutral-900 divide-y divide-neutral-800">
+                                    @forelse($temperatureData as $data)
+                                    <tr class="hover:bg-neutral-800 transition-colors">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-200">
+                                            {{ $data->topic }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">
+                                            {{ $data->sensor_type ?? 'N/A' }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
+                                                @if($data->temperatura < 20) bg-blue-900/50 text-blue-200 border border-blue-700/50
+                                                @elseif($data->temperatura >= 20 && $data->temperatura < 30) bg-emerald-900/50 text-emerald-200 border border-emerald-700/50
+                                                @else bg-red-900/50 text-red-200 border border-red-700/50
+                                                @endif">
+                                                {{ number_format($data->temperatura, 2) }}°C
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">
+                                            {{ $data->location ?? 'N/A' }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">
+                                            {{ $data->timestamp ? date('d/m/Y H:i:s', strtotime($data->timestamp)) : 'N/A' }}
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-8 text-center text-sm text-neutral-500">
+                                            No hay datos de temperatura disponibles
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
