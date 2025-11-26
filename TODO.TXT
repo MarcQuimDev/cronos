@@ -1,1 +1,1 @@
-- MOSTRAR NOVA TAULA (pressio)
+- Cada vegada que entras a un apartat es recarga la pagina: el desplegable no es mante ==> arreglar que es recarregui cada cop
