@@ -9,7 +9,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Get temperature data (assuming sensor_type differentiates them)
+        // Get temperature data
         $temperatureData = SensorData::whereNotNull('temperatura')
             ->orderBy('timestamp', 'desc')
             ->limit(50)
@@ -21,6 +21,12 @@ class DashboardController extends Controller
             ->limit(50)
             ->get();
 
-        return view('dashboard', compact('temperatureData', 'humidityData'));
+        // Get pressure data
+        $pressureData = SensorData::whereNotNull('pressio')
+            ->orderBy('timestamp', 'desc')
+            ->limit(50)
+            ->get();
+
+        return view('dashboard', compact('temperatureData', 'humidityData', 'pressureData'));
     }
 }
