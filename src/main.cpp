@@ -107,9 +107,9 @@ void loop() {
     }
     client.loop();  // Manté viva la connexió
     // --- Dades ---
-    float temp = dht.readTemperature();  // pots reemplaçar amb dht.readTemperature()
-    float hum = dht.readHumidity();   // pots reemplaçar amb dht.readHumidity()
-
+    float temp = dht.readTemperature();  
+    float hum = dht.readHumidity();   
+    float pres = bmp.readPressure();
 
     static unsigned long lastMsgOLED = 0;
     unsigned long nowOLED = millis();
@@ -121,14 +121,19 @@ void loop() {
         lastMsgOLED = nowOLED;
 
         // --- Actualitza Pantalla OLED ---
-        display.setTextSize(1);   // 1 es pequeño, 2 es más grande
+        display.setTextSize(1.5);   // 1 es pequeño, 2 es más grande
         display.setTextColor(SSD1306_WHITE);
         display.clearDisplay();
         display.setCursor(0, 0);
         display.print("Temperatura: ");
-        display.println(temp);
+        display.print(temp);
+        display.println(" °C");
         display.print("Humitat: ");
         display.println(hum);
+        display.println(" %");
+        display.print("Pressio: ");
+        display.println(pres/100);
+        display.println(" HPa");
 
         display.display();
         Serial.println("Display actualitzat");
