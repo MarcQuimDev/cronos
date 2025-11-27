@@ -9,7 +9,6 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_BMP280.h>
-#include <TEMT6000.h>
 
 // --- OLED --- 
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
@@ -26,7 +25,7 @@ DHT dht(DHTPIN, DHTTYPE);
 Adafruit_BMP280 bmp; // use I2C interface
 
 // --- TEMT6000 Sensor ---
-TEMT6000 llum(A3, 5, 4095);
+#define LDR_PIN 34
 
 // --- Wi-Fi Config ---
 const char* ssid = "Fiona2G";
@@ -117,7 +116,7 @@ void loop() {
     float temp = dht.readTemperature();  
     float hum = dht.readHumidity();   
     float pres = bmp.readPressure();
-    float bri = llum.readRaw();
+    float bri = analogRead(LDR_PIN);
 
     static unsigned long lastMsgOLED = 0;
     unsigned long nowOLED = millis();
@@ -145,7 +144,7 @@ void loop() {
         display.println(" HPa");
         display.display();
 
-        delay(500);
+        delay(1000);
         // --- Pantalla 2 ---
         display.clearDisplay();
         display.setCursor(0, 0);
@@ -159,11 +158,11 @@ void loop() {
         //display.print(pres/100);
         //display.println(" HPa");
         display.display();
-        delay(500);
+        delay(1000);
 
     }
 
-    if (nowSerial - lastMsgSerial > 10000) {
+    if (nowSerial - lastMsgSerial > 1000) {
         lastMsgSerial = nowSerial;
 
         // --- Actualitza Serial ---
@@ -173,6 +172,8 @@ void loop() {
         Serial.println(hum);
         Serial.print("Pressio: ");
         Serial.println(pres);
+        Serial.print("Brillantor: ");
+        Serial.println((bri/4095)*100);
         
 
         // --- Envia JSON per MQTT ---
