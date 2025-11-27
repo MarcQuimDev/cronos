@@ -1,15 +1,37 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="ca" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cronos - Humedad</title>
+    <title>Cronos - Humitat</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script>
+        // Prevent flash by applying sidebar state before render
+        (function() {
+            const sidebarExpanded = localStorage.getItem('sidebarExpanded') === 'true';
+            if (sidebarExpanded) {
+                document.documentElement.style.setProperty('--sidebar-width', '16rem');
+                document.documentElement.style.setProperty('--main-margin', '16rem');
+            }
+        })();
+    </script>
+    <style>
+        :root {
+            --sidebar-width: 5rem;
+            --main-margin: 5rem;
+        }
+        #sidebar.pre-render {
+            width: var(--sidebar-width) !important;
+        }
+        #main-container.pre-render {
+            margin-left: var(--main-margin) !important;
+        }
+    </style>
 </head>
 <body class="bg-neutral-950">
     <div class="min-h-screen flex">
         <!-- Sidebar Menu -->
-        <div id="sidebar" class="fixed left-0 top-0 h-full w-20 bg-neutral-900 border-r border-neutral-700 transition-all duration-300 ease-in-out z-40 overflow-hidden hover:shadow-2xl">
+        <div id="sidebar" class="pre-render fixed left-0 top-0 h-full w-20 bg-neutral-900 border-r border-neutral-700 transition-all duration-300 ease-in-out z-40 overflow-hidden hover:shadow-2xl">
             <div class="h-full flex flex-col py-4">
                 <!-- Menu Toggle Button -->
                 <button onclick="toggleSidebar()" class="flex items-center justify-center w-full py-4 text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800 transition-all duration-300">
@@ -22,12 +44,14 @@
 
                 <!-- Menu Items -->
                 <nav class="flex-1 px-2 space-y-1">
-                    <a href="/" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="Inicio">
+                    <a href="/" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="Inici">
                         <svg class="h-6 w-6 text-cyan-400 group-hover:text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
-                        <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Inicio</span>
+                        <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Inici</span>
                     </a>
+
+                    <div class="h-px bg-neutral-800 my-2"></div>
 
                     <a href="/temperature" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="Temperatura">
                         <svg class="h-6 w-6 text-cyan-400 group-hover:text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,18 +60,18 @@
                         <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Temperatura</span>
                     </a>
 
-                    <a href="/humidity" class="flex items-center gap-3 px-3 py-3 rounded-xl bg-neutral-800 text-white transition-all duration-300 group border border-cyan-500/50" title="Humedad">
+                    <a href="/humidity" class="flex items-center gap-3 px-3 py-3 rounded-xl bg-neutral-800 text-white transition-all duration-300 group border border-cyan-500/50" title="Humitat">
                         <svg class="h-6 w-6 text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
                         </svg>
-                        <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Humedad</span>
+                        <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Humitat</span>
                     </a>
 
-                    <a href="/pressure" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="Presión">
+                    <a href="/pressure" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="Pressió">
                         <svg class="h-6 w-6 text-cyan-400 group-hover:text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
-                        <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Presión</span>
+                        <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Pressió</span>
                     </a>
                 </nav>
 
@@ -59,11 +83,11 @@
         </div>
 
         <!-- Main Content Container -->
-        <div id="main-container" class="flex-1 ml-20 transition-all duration-300 ease-in-out flex flex-col">
+        <div id="main-container" class="pre-render flex-1 ml-20 transition-all duration-300 ease-in-out flex flex-col">
             <!-- Header - Sticky -->
             <header class="sticky top-0 bg-neutral-900/95 backdrop-blur-sm shadow-lg border-b border-neutral-800 z-30">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <h1 class="text-3xl font-bold text-white">Datos de Humedad</h1>
+                    <h1 class="text-3xl font-bold text-white">Dades d'Humitat</h1>
                 </div>
             </header>
 
@@ -80,16 +104,16 @@
                                             Topic
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                            Tipo de Sensor
+                                            Tipus de Sensor
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                            Humedad (%)
+                                            Humitat (%)
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                            Ubicación
+                                            Ubicació
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                            Fecha/Hora
+                                            Data/Hora
                                         </th>
                                     </tr>
                                 </thead>
@@ -121,7 +145,7 @@
                                     @empty
                                     <tr>
                                         <td colspan="5" class="px-6 py-8 text-center text-sm text-neutral-500">
-                                            No hay datos de humedad disponibles
+                                            No hi ha dades d'humitat disponibles
                                         </td>
                                     </tr>
                                     @endforelse
@@ -135,6 +159,35 @@
     </div>
 
     <script>
+        // Restore sidebar state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContainer = document.getElementById('main-container');
+            const sidebarTexts = document.querySelectorAll('.sidebar-text');
+            const menuIcon = document.getElementById('menu-icon');
+            const sidebarExpanded = localStorage.getItem('sidebarExpanded') === 'true';
+
+            if (sidebarExpanded) {
+                // Expand sidebar
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-64');
+                mainContainer.classList.remove('ml-20');
+                mainContainer.classList.add('ml-64');
+
+                // Show text labels
+                sidebarTexts.forEach(text => {
+                    text.classList.remove('opacity-0');
+                    text.classList.add('opacity-100');
+                });
+
+                menuIcon.style.transform = 'rotate(90deg)';
+            }
+
+            // Remove pre-render class to enable transitions
+            sidebar.classList.remove('pre-render');
+            mainContainer.classList.remove('pre-render');
+        });
+
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const mainContainer = document.getElementById('main-container');
@@ -156,6 +209,9 @@
                 });
 
                 menuIcon.style.transform = 'rotate(90deg)';
+
+                // Save expanded state to localStorage
+                localStorage.setItem('sidebarExpanded', 'true');
             } else {
                 // Collapse sidebar
                 sidebar.classList.remove('w-64');
@@ -170,6 +226,9 @@
                 });
 
                 menuIcon.style.transform = 'rotate(0deg)';
+
+                // Save collapsed state to localStorage
+                localStorage.setItem('sidebarExpanded', 'false');
             }
         }
     </script>
