@@ -103,6 +103,7 @@ void setup() {
     dht.begin();
     //oled
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+
     delay(1000); // pausa inicial
 }
 
@@ -144,13 +145,13 @@ void loop() {
         display.println(" HPa");
         display.display();
 
-        delay(1000);
+        delay(2000);
         // --- Pantalla 2 ---
         display.clearDisplay();
         display.setCursor(0, 0);
         display.print("Brillantor: ");
-        display.print((bri/4095)*100);
-        display.println(" ");
+        display.print((bri/500)*100);
+        display.println(" %");
         //display.print("\nHumitat: ");
         //display.print(hum);
         //display.println(" %");
@@ -158,7 +159,7 @@ void loop() {
         //display.print(pres/100);
         //display.println(" HPa");
         display.display();
-        delay(1000);
+        delay(2000);
 
     }
 
@@ -173,7 +174,8 @@ void loop() {
         Serial.print("Pressio: ");
         Serial.println(pres);
         Serial.print("Brillantor: ");
-        Serial.println((bri/4095)*100);
+        Serial.print((bri/500)*100);
+        Serial.println(" %");
         
 
         // --- Envia JSON per MQTT ---
