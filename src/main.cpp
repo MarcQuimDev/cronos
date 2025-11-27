@@ -131,7 +131,7 @@ void loop() {
         display.setCursor(0, 0);
         display.print("Temperatura: ");
         display.print(temp);
-        display.println(" °C");
+        display.println(" C");
         display.print("Humitat: ");
         display.print(hum);
         display.println(" %");
