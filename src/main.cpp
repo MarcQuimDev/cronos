@@ -159,7 +159,7 @@ void loop() {
         //display.print(pres/100);
         //display.println(" HPa");
         display.display();
-        delay(500)
+        delay(500);
 
     }
 
