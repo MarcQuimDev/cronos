@@ -1,10 +1,15 @@
 #include <WiFi.h>
+#include <Wire.h>
+#include <SPI.h>
+
+//llibreries
 #include <PubSubClient.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
-#include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Adafruit_BMP280.h>
+#include <TEMT6000.h>
 
 // --- OLED --- 
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
@@ -16,6 +21,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define DHTPIN 19
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
+
+// --- BMP280 Sensor ---
+Adafruit_BMP280 bmp; // use I2C interface
 
 // --- Wi-Fi Config ---
 const char* ssid = "Fiona2G";
@@ -71,19 +79,25 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Iniciant ESP32...");
 
+    //wifi + mqtt
     setup_wifi();
 
     client.setServer(mqtt_server, mqtt_port);
     Serial.println("MQTT configurat!");
 
-    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-        Serial.println(F("SSD1306 allocation failed"));
-        for (;;); // no continua si falla
-    }
-
+    //bmp280
+    bmp.begin();
+    /* Default settings from datasheet. */
+    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+    //dht11
     dht.begin();
-    display.display();
-    delay(2000); // pausa inicial
+    //oled
+    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    delay(1000); // pausa inicial
 }
 
 // --- Loop ---
@@ -92,25 +106,43 @@ void loop() {
         reconnect();
     }
     client.loop();  // Manté viva la connexió
+    // --- Dades ---
+    float temp = dht.readTemperature();  // pots reemplaçar amb dht.readTemperature()
+    float hum = dht.readHumidity();   // pots reemplaçar amb dht.readHumidity()
 
-    static unsigned long lastMsg = 0;
-    unsigned long now = millis();
 
-    if (now - lastMsg > 5000) {
-        lastMsg = now;
+    static unsigned long lastMsgOLED = 0;
+    unsigned long nowOLED = millis();
 
-        // --- Dades ---
-        float temp = 20;  // pots reemplaçar amb dht.readTemperature()
-        float hum = 80;   // pots reemplaçar amb dht.readHumidity()
+    static unsigned long lastMsgSerial = 0;
+    unsigned long nowSerial = millis();
+
+    if (nowOLED - lastMsgOLED > 500) {
+        lastMsgOLED = nowOLED;
 
         // --- Actualitza Pantalla OLED ---
+        display.setTextSize(1);   // 1 es pequeño, 2 es más grande
+        display.setTextColor(SSD1306_WHITE);
         display.clearDisplay();
         display.setCursor(0, 0);
-        display.println("Temperatura: ");
-        display.print(temp);
-        display.display();
+        display.print("Temperatura: ");
+        display.println(temp);
+        display.print("Humitat: ");
+        display.println(hum);
 
+        display.display();
         Serial.println("Display actualitzat");
+    }
+
+    if (nowSerial - lastMsgSerial > 10000) {
+        lastMsgSerial = nowSerial;
+
+        // --- Actualitza Serial ---
+        Serial.print("Temperatura: ");
+        Serial.println(temp);
+        Serial.print("Humitat: ");
+        Serial.println(hum);
+        
 
         // --- Envia JSON per MQTT ---
         char payload[100];
