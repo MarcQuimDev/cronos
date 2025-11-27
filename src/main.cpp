@@ -86,7 +86,11 @@ void setup() {
     Serial.println("MQTT configurat!");
 
     //bmp280
-    bmp.begin();
+    if (!bmp.begin(0x76)) {  // dirección I2C del BMP280, a veces es 0x76 o 0x77
+    Serial.println("No s'ha pogut inicialitzar el BMP280!");
+    while (1) delay(10); // se queda aquí para avisarte
+    }
+
     /* Default settings from datasheet. */
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                   Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
@@ -129,10 +133,10 @@ void loop() {
         display.print(temp);
         display.println(" °C");
         display.print("Humitat: ");
-        display.println(hum);
+        display.print(hum);
         display.println(" %");
         display.print("Pressio: ");
-        display.println(pres/100);
+        display.print(pres/100);
         display.println(" HPa");
 
         display.display();
@@ -147,11 +151,13 @@ void loop() {
         Serial.println(temp);
         Serial.print("Humitat: ");
         Serial.println(hum);
+        Serial.print("Pressio: ");
+        Serial.println(pres);
         
 
         // --- Envia JSON per MQTT ---
         char payload[100];
-        snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"humitat\": %.0f}", temp, hum);
+        snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"humitat\": %.0f, \"pressio\": %.1f}", temp, hum, pres/100);
 
         Serial.print("Enviant JSON: ");
         Serial.println(payload);
