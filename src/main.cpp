@@ -26,7 +26,7 @@ DHT dht(DHTPIN, DHTTYPE);
 Adafruit_BMP280 bmp; // use I2C interface
 
 // --- TEMT6000 Sensor ---
-TEMT6000 llum(A3, 5, 4095)
+TEMT6000 llum(A3, 5, 4095);
 
 // --- Wi-Fi Config ---
 const char* ssid = "Fiona2G";
@@ -128,7 +128,7 @@ void loop() {
     if (nowOLED - lastMsgOLED > 500) {
         lastMsgOLED = nowOLED;
         
-        display.setTextSize(2);   // 1 es pequeño, 2 es más grande
+        display.setTextSize(1);   // 1 es pequeño, 2 es más grande
         display.setTextColor(SSD1306_WHITE);
 
         // --- Pantalla 1 ---
