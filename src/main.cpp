@@ -25,6 +25,9 @@ DHT dht(DHTPIN, DHTTYPE);
 // --- BMP280 Sensor ---
 Adafruit_BMP280 bmp; // use I2C interface
 
+// --- TEMT6000 Sensor ---
+TEMT6000 llum(A3, 5, 4095)
+
 // --- Wi-Fi Config ---
 const char* ssid = "Fiona2G";
 const char* password = "Pampall1g1e$";
@@ -114,6 +117,7 @@ void loop() {
     float temp = dht.readTemperature();  
     float hum = dht.readHumidity();   
     float pres = bmp.readPressure();
+    float bri = llum.readRaw();
 
     static unsigned long lastMsgOLED = 0;
     unsigned long nowOLED = millis();
@@ -123,24 +127,40 @@ void loop() {
 
     if (nowOLED - lastMsgOLED > 500) {
         lastMsgOLED = nowOLED;
-
-        // --- Actualitza Pantalla OLED ---
-        display.setTextSize(1.5);   // 1 es pequeño, 2 es más grande
+        
+        display.setTextSize(2);   // 1 es pequeño, 2 es más grande
         display.setTextColor(SSD1306_WHITE);
+
+        // --- Pantalla 1 ---
         display.clearDisplay();
         display.setCursor(0, 0);
         display.print("Temperatura: ");
         display.print(temp);
         display.println(" C");
-        display.print("Humitat: ");
+        display.print("\nHumitat: ");
         display.print(hum);
         display.println(" %");
-        display.print("Pressio: ");
+        display.print("\nPressio: ");
         display.print(pres/100);
         display.println(" HPa");
-
         display.display();
-        Serial.println("Display actualitzat");
+
+        delay(500);
+        // --- Pantalla 2 ---
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.print("Brillantor: ");
+        display.print((bri/4095)*100);
+        display.println(" ");
+        //display.print("\nHumitat: ");
+        //display.print(hum);
+        //display.println(" %");
+        //display.print("\nPressio: ");
+        //display.print(pres/100);
+        //display.println(" HPa");
+        display.display();
+        delay(500)
+
     }
 
     if (nowSerial - lastMsgSerial > 10000) {
