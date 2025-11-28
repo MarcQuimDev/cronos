@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cronos - Temperatura</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
         // Prevent flash by applying sidebar state before render
         (function() {
@@ -94,6 +97,17 @@
             <!-- Main Content -->
             <div class="flex-1">
             <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                <!-- Chart Section -->
+                <div class="px-4 sm:px-0 mb-6">
+                    <div class="bg-neutral-900 shadow-xl rounded-lg p-6 border border-neutral-800">
+                        <h2 class="text-xl font-semibold text-white mb-4">Evolució de la Temperatura</h2>
+                        <div class="relative h-80">
+                            <canvas id="temperatureChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
                 <div class="px-4 sm:px-0">
                     <div class="bg-neutral-900 shadow-xl rounded-lg overflow-hidden border border-neutral-800">
                         <div class="overflow-x-auto">
@@ -154,9 +168,129 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Pagination -->
+                @if($temperatureData->hasPages())
+                <div class="px-4 sm:px-0 mt-6">
+                    <div class="bg-neutral-900 shadow-xl rounded-lg p-4 border border-neutral-800">
+                        {{ $temperatureData->links() }}
+                    </div>
+                </div>
+                @endif
             </main>
         </div>
     </div>
+
+    <script>
+        // Chart.js initialization
+        (function() {
+            // Prepare data for chart (use current page data, reversed for chronological order)
+            const temperatureData = @json($temperatureData->items());
+
+            // Reverse data for chronological order (oldest to newest)
+            const reversedData = [...temperatureData].reverse();
+
+            const labels = reversedData.map(item => {
+                const date = new Date(item.timestamp);
+                return date.toLocaleString('ca-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            });
+
+            const temperatures = reversedData.map(item => parseFloat(item.temperatura));
+
+            // Get or create canvas
+            const ctx = document.getElementById('temperatureChart');
+            if (!ctx) {
+                console.error('Canvas element not found');
+                return;
+            }
+
+            // Destroy existing chart if it exists (prevents memory leaks)
+            if (window.temperatureChartInstance) {
+                window.temperatureChartInstance.destroy();
+                window.temperatureChartInstance = null;
+            }
+
+            // Create new chart
+            window.temperatureChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temperatura (°C)',
+                        data: temperatures,
+                        borderColor: 'rgb(34, 211, 238)',
+                        backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: 'rgb(34, 211, 238)',
+                        pointBorderColor: 'rgb(34, 211, 238)',
+                        pointHoverBackgroundColor: 'rgb(255, 255, 255)',
+                        pointHoverBorderColor: 'rgb(34, 211, 238)',
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: 'rgb(212, 212, 212)',
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(23, 23, 23, 0.9)',
+                            titleColor: 'rgb(34, 211, 238)',
+                            bodyColor: 'rgb(212, 212, 212)',
+                            borderColor: 'rgb(34, 211, 238)',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Temperatura: ' + context.parsed.y.toFixed(2) + '°C';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                color: 'rgb(163, 163, 163)',
+                                callback: function(value) {
+                                    return value + '°C';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(64, 64, 64, 0.3)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: 'rgb(163, 163, 163)',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            grid: {
+                                color: 'rgba(64, 64, 64, 0.3)'
+                            }
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
 
     <script>
         // Restore sidebar state on page load
@@ -186,7 +320,122 @@
             // Remove pre-render class to enable transitions
             sidebar.classList.remove('pre-render');
             mainContainer.classList.remove('pre-render');
+
+            // Setup AJAX navigation
+            setupAjaxNavigation();
         });
+
+        // AJAX Navigation System
+        function setupAjaxNavigation() {
+            const navLinks = document.querySelectorAll('nav a[href]');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.getAttribute('href');
+                    loadPage(url);
+                });
+            });
+
+            // Handle browser back/forward buttons
+            window.addEventListener('popstate', function(e) {
+                if (e.state && e.state.url) {
+                    loadPage(e.state.url, false);
+                }
+            });
+
+            // Save current state
+            history.replaceState({ url: window.location.pathname }, '', window.location.pathname);
+        }
+
+        function loadPage(url, updateHistory = true) {
+            // Show loading state
+            const contentArea = document.querySelector('#main-container .flex-1');
+
+            // Fetch content via AJAX
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update page title
+                document.querySelector('header h1').textContent = data.title;
+                document.title = 'Cronos - ' + data.title.replace('Cronos TDR - ', '').replace('Dades de ', '').replace('Dades d\'', '');
+
+                // Replace content
+                contentArea.innerHTML = data.content;
+
+                // Execute scripts in the loaded content
+                executeScripts(contentArea);
+
+                // Update active state in sidebar
+                updateActiveLink(url);
+
+                // Update browser history
+                if (updateHistory) {
+                    history.pushState({ url: url }, '', url);
+                }
+
+                // Scroll to top
+                window.scrollTo(0, 0);
+            })
+            .catch(error => {
+                console.error('Error loading page:', error);
+            });
+        }
+
+        function executeScripts(container) {
+            // Find all script tags in the loaded content
+            const scripts = container.querySelectorAll('script');
+
+            scripts.forEach(oldScript => {
+                // Create a new script element
+                const newScript = document.createElement('script');
+
+                // Copy attributes
+                Array.from(oldScript.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+
+                // Copy script content
+                newScript.textContent = oldScript.textContent;
+
+                // Replace old script with new one (this executes it)
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
+        function updateActiveLink(url) {
+            const navLinks = document.querySelectorAll('nav a[href]');
+
+            navLinks.forEach(link => {
+                const linkUrl = link.getAttribute('href');
+                if (linkUrl === url) {
+                    // Add active classes
+                    link.classList.add('bg-neutral-800', 'text-white', 'border-cyan-500/50');
+                    link.classList.remove('text-neutral-300', 'border-transparent');
+                    // Update icon color
+                    const svg = link.querySelector('svg');
+                    if (svg) {
+                        svg.classList.add('text-cyan-300');
+                        svg.classList.remove('text-cyan-400', 'group-hover:text-cyan-300');
+                    }
+                } else {
+                    // Remove active classes
+                    link.classList.remove('bg-neutral-800', 'border-cyan-500/50');
+                    link.classList.add('text-neutral-300', 'border-transparent');
+                    // Reset icon color
+                    const svg = link.querySelector('svg');
+                    if (svg) {
+                        svg.classList.remove('text-cyan-300');
+                        svg.classList.add('text-cyan-400', 'group-hover:text-cyan-300');
+                    }
+                }
+            });
+        }
 
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');

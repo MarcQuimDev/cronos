@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cronos - Tauler</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
         // Prevent flash by applying sidebar state before render
         (function() {
@@ -87,7 +90,7 @@
             <!-- Header - Sticky -->
             <header class="sticky top-0 bg-neutral-900/95 backdrop-blur-sm shadow-lg border-b border-neutral-800 z-30">
                 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    <h1 class="text-3xl font-bold text-white">Cronos TDR - Tauler de Sensors</h1>
+                    <h1 class="text-2xl font-bold text-white">Cronos TDR - Tauler de Sensors</h1>
                 </div>
             </header>
 
@@ -110,7 +113,7 @@
                                 <div class="ml-5 w-0 flex-1">
                                     <dl>
                                         <dt class="text-sm font-medium text-neutral-400 truncate">Última Lectura - Temperatura</dt>
-                                        <dd class="text-3xl font-semibold text-white">{{ $temperatureData->count() > 0 ? number_format($temperatureData->first()->temperatura, 2) : '0' }}°C</dd>
+                                        <dd class="text-3xl font-semibold text-white">{{ $temperatureData ? number_format($temperatureData->temperatura, 2) : 'N/A' }}°C</dd>
                                     </dl>
                                 </div>
                             </div>
@@ -129,7 +132,7 @@
                                 <div class="ml-5 w-0 flex-1">
                                     <dl>
                                         <dt class="text-sm font-medium text-neutral-400 truncate">Última Lectura - Humitat</dt>
-                                        <dd class="text-3xl font-semibold text-white">{{ $humidityData->count() > 0 ? number_format($humidityData->first()->humitat, 2) : '0' }}%</dd>
+                                        <dd class="text-3xl font-semibold text-white">{{ $humidityData ? number_format($humidityData->humitat, 2) : 'N/A' }}%</dd>
                                     </dl>
                                 </div>
                             </div>
@@ -148,7 +151,7 @@
                                 <div class="ml-5 w-0 flex-1">
                                     <dl>
                                         <dt class="text-sm font-medium text-neutral-400 truncate">Última Lectura - Pressió</dt>
-                                        <dd class="text-3xl font-semibold text-white">{{ $pressureData->count() > 0 ? number_format($pressureData->first()->pressio, 2) : '0' }} hPa</dd>
+                                        <dd class="text-3xl font-semibold text-white">{{ $pressureData ? number_format($pressureData->pressio, 2) : 'N/A' }} hPa</dd>
                                     </dl>
                                 </div>
                             </div>
@@ -187,7 +190,158 @@
             // Remove pre-render class to enable transitions
             sidebar.classList.remove('pre-render');
             mainContainer.classList.remove('pre-render');
+
+            // Setup AJAX navigation
+            setupAjaxNavigation();
         });
+
+        // AJAX Navigation System
+        function setupAjaxNavigation() {
+            const navLinks = document.querySelectorAll('nav a[href]');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.getAttribute('href');
+                    loadPage(url);
+                });
+            });
+
+            // Handle browser back/forward buttons
+            window.addEventListener('popstate', function(e) {
+                if (e.state && e.state.url) {
+                    loadPage(e.state.url, false);
+                }
+            });
+
+            // Save current state
+            history.replaceState({ url: window.location.pathname }, '', window.location.pathname);
+        }
+
+        function loadPage(url, updateHistory = true) {
+            // Show loading state
+            const contentArea = document.querySelector('#main-container .flex-1');
+            const originalContent = contentArea.innerHTML;
+
+            // Show loading indicator
+            contentArea.innerHTML = `
+                <div class="flex items-center justify-center min-h-screen">
+                    <div class="text-center">
+                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
+                        <p class="mt-4 text-neutral-400">Carregant...</p>
+                    </div>
+                </div>
+            `;
+
+            // Fetch content via AJAX
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Update page title
+                document.querySelector('header h1').textContent = data.title;
+                document.title = 'Cronos - ' + data.title.replace('Cronos TDR - ', '').replace('Dades de ', '').replace('Dades d\'', '');
+
+                // Replace content
+                contentArea.innerHTML = data.content;
+
+                // Execute scripts in the loaded content
+                executeScripts(contentArea);
+
+                // Update active state in sidebar
+                updateActiveLink(url);
+
+                // Update browser history
+                if (updateHistory) {
+                    history.pushState({ url: url }, '', url);
+                }
+
+                // Scroll to top
+                window.scrollTo(0, 0);
+            })
+            .catch(error => {
+                console.error('Error loading page:', error);
+
+                // Show error message
+                contentArea.innerHTML = `
+                    <div class="flex items-center justify-center min-h-screen">
+                        <div class="text-center bg-red-900/20 border border-red-700/50 rounded-lg p-8 max-w-md">
+                            <svg class="h-12 w-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <h3 class="text-lg font-semibold text-white mb-2">Error carregant la pàgina</h3>
+                            <p class="text-neutral-300 mb-4">${error.message}</p>
+                            <button onclick="location.reload()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors">
+                                Recarregar pàgina
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function executeScripts(container) {
+            // Find all script tags in the loaded content
+            const scripts = container.querySelectorAll('script');
+
+            scripts.forEach(oldScript => {
+                // Create a new script element
+                const newScript = document.createElement('script');
+
+                // Copy attributes
+                Array.from(oldScript.attributes).forEach(attr => {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+
+                // Copy script content
+                newScript.textContent = oldScript.textContent;
+
+                // Replace old script with new one (this executes it)
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
+        function updateActiveLink(url) {
+            const navLinks = document.querySelectorAll('nav a[href]');
+
+            navLinks.forEach(link => {
+                const linkUrl = link.getAttribute('href');
+                if (linkUrl === url) {
+                    // Add active classes
+                    link.classList.add('bg-neutral-800', 'text-white', 'border-cyan-500/50');
+                    link.classList.remove('text-neutral-300', 'border-transparent');
+                    // Update icon color
+                    const svg = link.querySelector('svg');
+                    if (svg) {
+                        svg.classList.add('text-cyan-300');
+                        svg.classList.remove('text-cyan-400', 'group-hover:text-cyan-300');
+                    }
+                } else {
+                    // Remove active classes
+                    link.classList.remove('bg-neutral-800', 'border-cyan-500/50');
+                    link.classList.add('text-neutral-300', 'border-transparent');
+                    // Reset icon color
+                    const svg = link.querySelector('svg');
+                    if (svg) {
+                        svg.classList.remove('text-cyan-300');
+                        svg.classList.add('text-cyan-400', 'group-hover:text-cyan-300');
+                    }
+                }
+            });
+        }
 
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
