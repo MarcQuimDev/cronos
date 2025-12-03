@@ -9,6 +9,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_BMP280.h>
+#include <Adafruit_CCS811.h>
 
 // --- OLED --- 
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
@@ -26,6 +27,9 @@ Adafruit_BMP280 bmp; // use I2C interface
 
 // --- TEMT6000 Sensor ---
 #define LDR_PIN 34
+
+// --- CCS811 Sensor ---
+Adafruit_CCS811 ccs;
 
 // --- Wi-Fi Config ---
 const char* ssid = "Fiona2G";
@@ -101,6 +105,11 @@ void setup() {
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
     //dht11
     dht.begin();
+
+    //ccs811
+    if(!ccs.begin()){
+        Serial.println("Failed to start sensor! Please check your wiring.");
+         
     //oled
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 
@@ -118,6 +127,8 @@ void loop() {
     float hum = dht.readHumidity();   
     float pres = bmp.readPressure();
     float bri = analogRead(LDR_PIN);
+    float eCO2 = ccs.geteCO2();
+    float TVOC = ccs.getTVOC();
 
     static unsigned long lastMsgOLED = 0;
     unsigned long nowOLED = millis();
@@ -144,7 +155,6 @@ void loop() {
         display.print(pres/100);
         display.println(" HPa");
         display.display();
-
         delay(2000);
         // --- Pantalla 2 ---
         display.clearDisplay();
@@ -152,12 +162,11 @@ void loop() {
         display.print("Brillantor: ");
         display.print((bri/500)*100);
         display.println(" %");
-        //display.print("\nHumitat: ");
-        //display.print(hum);
-        //display.println(" %");
-        //display.print("\nPressio: ");
-        //display.print(pres/100);
-        //display.println(" HPa");
+        display.print("eCO2: ");
+        display.println(eCO2);
+        display.print("TVOC: ");
+        display.print(TVOC);
+        display.println(" ppm");
         display.display();
         delay(2000);
 
@@ -176,7 +185,11 @@ void loop() {
         Serial.print("Brillantor: ");
         Serial.print((bri/500)*100);
         Serial.println(" %");
-        
+        Serial.print("eCO2: ");
+        Serial.println(eCO2);
+        Serial.print("TVOC: ");
+        Serial.print(TVOC);
+        Serial.println(" ppm");
 
         // --- Envia JSON per MQTT ---
         char payload[100];
