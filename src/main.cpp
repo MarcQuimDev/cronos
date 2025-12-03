@@ -18,7 +18,7 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // --- DHT Sensor ---
-#define DHTPIN 19
+#define DHTPIN 25
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -109,7 +109,7 @@ void setup() {
     //ccs811
     if(!ccs.begin()){
         Serial.println("Failed to start sensor! Please check your wiring.");
-         
+    }
     //oled
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 
