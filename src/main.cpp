@@ -87,7 +87,6 @@ void setup() {
 
     //wifi + mqtt
     setup_wifi();
-
     client.setServer(mqtt_server, mqtt_port);
     Serial.println("MQTT configurat!");
 
@@ -122,6 +121,7 @@ void loop() {
         reconnect();
     }
     client.loop();  // Manté viva la connexió
+    
     // --- Dades ---
     float temp = dht.readTemperature();  
     float hum = dht.readHumidity();   
@@ -146,7 +146,7 @@ void loop() {
     if (nowOLED - lastMsgOLED > 500) {
         lastMsgOLED = nowOLED;
         
-        display.setTextSize(1);   // 1 es pequeño, 2 es más grande
+        display.setTextSize(1);
         display.setTextColor(SSD1306_WHITE);
 
         // --- Pantalla 1 ---
