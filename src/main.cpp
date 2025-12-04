@@ -127,8 +127,15 @@ void loop() {
     float hum = dht.readHumidity();   
     float pres = bmp.readPressure();
     float bri = analogRead(LDR_PIN);
-    float eCO2 = ccs.geteCO2();
-    float TVOC = ccs.getTVOC();
+    ccs.setEnvironmentalData(hum, temp);
+    if (ccs.available()) {
+        if (!ccs.readData()) {
+            float eCO2 = ccs.geteCO2();
+            float TVOC = ccs.getTVOC();
+        } else {
+            Serial.println("Error llegint el CCS811");
+        }
+    }
 
     static unsigned long lastMsgOLED = 0;
     unsigned long nowOLED = millis();
