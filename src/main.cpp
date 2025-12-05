@@ -84,35 +84,56 @@ void reconnect() {
 void setup() {
     Serial.begin(115200);
     Serial.println("Iniciant ESP32...");
+    //oled
+    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
 
     //wifi + mqtt
     setup_wifi();
+    display.clearDisplay();
+    display.setTextSize(2);
+    if (WiFi.status() == WL_CONNECTED) {
+        display.println("WIFI OK");
+    }
+    display.display();
+    delay(200);
     client.setServer(mqtt_server, mqtt_port);
-    Serial.println("MQTT configurat!");
+    if (client.connect("sensor1_esp32", mqtt_user, mqtt_pass)) {
+        display.println("MQTT OK");
+        Serial.println("MQTT configurat!");
+    } else {
+        display.println("MQTT ERROR");
+    }
+
+    display.display();
+    delay(200);
 
     //bmp280
     if (!bmp.begin(0x76)) {  // dirección I2C del BMP280, a veces es 0x76 o 0x77
     Serial.println("No s'ha pogut inicialitzar el BMP280!");
     while (1) delay(10); // se queda aquí para avisarte
     }
-
     /* Default settings from datasheet. */
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
                   Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
                   Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
                   Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+
     //dht11
     dht.begin();
-
+    
     //ccs811
     if(!ccs.begin()){
-        Serial.println("Failed to start sensor! Please check your wiring.");
+        Serial.println("CCS811 ERROR");
+    } else{
+        Serial.println("CCS811 Iniciat");
     }
-    //oled
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-
-    delay(1000); // pausa inicial
+    ccs.setDriveMode(CCS811_DRIVE_MODE_1SEC);
+    display.println("SENSORS OK");
+    display.display();
+    delay(500);
 }
 
 // --- Loop ---
@@ -127,15 +148,20 @@ void loop() {
     float hum = dht.readHumidity();   
     float pres = bmp.readPressure();
     float bri = analogRead(LDR_PIN);
+    float eCO2 = 0;
+    float TVOC = 0;
+
     ccs.setEnvironmentalData(hum, temp);
+
     if (ccs.available()) {
         if (!ccs.readData()) {
-            float eCO2 = ccs.geteCO2();
-            float TVOC = ccs.getTVOC();
+            eCO2 = ccs.geteCO2();
+            TVOC = ccs.getTVOC();
         } else {
             Serial.println("Error llegint el CCS811");
         }
     }
+
 
     static unsigned long lastMsgOLED = 0;
     unsigned long nowOLED = millis();
@@ -147,7 +173,6 @@ void loop() {
         lastMsgOLED = nowOLED;
         
         display.setTextSize(1);
-        display.setTextColor(SSD1306_WHITE);
 
         // --- Pantalla 1 ---
         display.clearDisplay();
@@ -166,14 +191,15 @@ void loop() {
         // --- Pantalla 2 ---
         display.clearDisplay();
         display.setCursor(0, 0);
-        display.print("Brillantor: ");
+        display.print("\nBrillantor: ");
         display.print((bri/500)*100);
         display.println(" %");
-        display.print("eCO2: ");
-        display.println(eCO2);
-        display.print("TVOC: ");
-        display.print(TVOC);
+        display.print("\neCO2: ");
+        display.print(eCO2);
         display.println(" ppm");
+        display.print("\nTVOC: ");
+        display.print(TVOC);
+        display.println(" ppb");
         display.display();
         delay(2000);
 
@@ -193,10 +219,11 @@ void loop() {
         Serial.print((bri/500)*100);
         Serial.println(" %");
         Serial.print("eCO2: ");
-        Serial.println(eCO2);
+        Serial.print(eCO2);
+        Serial.println(" ppm");
         Serial.print("TVOC: ");
         Serial.print(TVOC);
-        Serial.println(" ppm");
+        Serial.println(" ppb");
 
         // --- Envia JSON per MQTT ---
         char payload[100];
