@@ -21,9 +21,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // --- NeoPixel ---
 #define LED_PIN     17
-#define NUM_LEDS    3
+#define NUM_LEDS    30
 TaskHandle_t TaskLEDs;
-uint8_t brightness = 255;
+uint8_t brightness = 10;
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // --- DHT Sensor ---
@@ -155,9 +155,8 @@ void setup() {
     display.display();
 
     //bmp280
-    if (!bmp.begin(0x76)) {  // dirección I2C del BMP280, a veces es 0x76 o 0x77
+    if (!bmp.begin(0x76)) {
     Serial.println("No s'ha pogut inicialitzar el BMP280!");
-    while (1) delay(10); // se queda aquí para avisarte
     }
     /* Default settings from datasheet. */
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode. */
@@ -192,36 +191,49 @@ void loop() {
         reconnect();
     }
     client.loop();  // manté viva la connexió
-
-
+    
+    
     // --- Dades ---
     float temp = dht.readTemperature();  
     float hum = dht.readHumidity();   
     float pres = bmp.readPressure();
     float bri = analogRead(LDR_PIN);
-    float eCO2 = 0;
-    float TVOC = 0;
-
-    ccs.setEnvironmentalData(hum, temp);
+    static float eCO2 = 400;  // valor per defecte
+    static float TVOC = 0;
 
     if (ccs.available()) {
         if (!ccs.readData()) {
             eCO2 = ccs.geteCO2();
             TVOC = ccs.getTVOC();
         } else {
-            Serial.println("Error llegint el CCS811");
+            Serial.println("Error llegint CCS811");
         }
     }
 
+    // leds 
+    int r = temp;
+    int g = temp;
+    int b = temp;
+    // Assigna el color a tots els LEDs
+    for (int i = 0; i < NUM_LEDS; i++) {
+        strip.setPixelColor(i, r,g,b);
+    }
+    strip.show();
+    
+    
     static unsigned long lastMsgOLED = 0;
     unsigned long nowOLED = millis();
+    static bool pantalla1 = true;
 
+    if (nowOLED - lastMsgOLED >= 2000) {
+    pantalla1 = !pantalla1; // alterna pantalla
+    lastMsgOLED = nowOLED;
+    }
+    
     static unsigned long lastMsgSerial = 0;
     unsigned long nowSerial = millis();
-
-    if (nowOLED - lastMsgOLED > 500) {
-        lastMsgOLED = nowOLED;
-        
+    
+    if (pantalla1) {
         display.clearDisplay();
         temps();
         // --- Pantalla 1 ---
@@ -237,7 +249,9 @@ void loop() {
         display.print(pres/100);
         display.println(" HPa");
         display.display();
-        delay(2000);
+    }
+    else if (!pantalla1)
+    {
         // --- Pantalla 2 ---
         display.clearDisplay();
         temps();
@@ -253,13 +267,11 @@ void loop() {
         display.print(TVOC);
         display.println(" ppb");
         display.display();
-        delay(2000);
-
     }
-
+    
     if (nowSerial - lastMsgSerial > 1000) {
         lastMsgSerial = nowSerial;
-
+        
         // --- Actualitza Serial ---
         Serial.print("Temperatura: ");
         Serial.println(temp);
@@ -276,18 +288,21 @@ void loop() {
         Serial.print("TVOC: ");
         Serial.print(TVOC);
         Serial.println(" ppb");
-
+        
         // --- Envia JSON per MQTT ---
         char payload[100];
         snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"humitat\": %.0f, \"pressio\": %.1f}", temp, hum, pres/100);
-
+        
         Serial.print("Enviant JSON: ");
         Serial.println(payload);
-
+        
         if (client.publish("casa/", payload)) {
             Serial.println("JSON publicat correctament!");
         } else {
             Serial.println("Error publicant JSON!");
         }
+
+
     }
+    
 }
