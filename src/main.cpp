@@ -11,12 +11,20 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_BMP280.h>
 #include <Adafruit_CCS811.h>
+#include <Adafruit_NeoPixel.h>
 
 // --- OLED --- 
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
 #define SCREEN_HEIGHT 64  // OLED display height, in pixels
 #define OLED_RESET     -1 // Reset pin (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// --- NeoPixel ---
+#define LED_PIN     17
+#define NUM_LEDS    3
+TaskHandle_t TaskLEDs;
+uint8_t brightness = 255;
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // --- DHT Sensor ---
 #define DHTPIN 25
@@ -87,6 +95,7 @@ void reconnect() {
     }
 }
 
+
 void temps(){
     struct tm timeinfo;
     static int lastMinute = -1;
@@ -113,15 +122,15 @@ void setup() {
     //wifi + mqtt
     setup_wifi();
     display.clearDisplay();
-    display.setTextSize(2);
+    display.setTextSize(1);
     if (WiFi.status() == WL_CONNECTED) {
-        display.println("WIFI    OK");
+        display.println("WIFI         OK");
     }
     display.display();
     delay(200);
     client.setServer(mqtt_server, mqtt_port);
     if (client.connect("sensor1_esp32", mqtt_user, mqtt_pass)) {
-        display.println("MQTT    OK");
+        display.println("MQTT         OK");
         Serial.println("MQTT configurat!");
     } else {
         display.println("MQTT ERROR");
@@ -156,18 +165,22 @@ void setup() {
                   Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
                   Adafruit_BMP280::FILTER_X16,      /* Filtering. */
                   Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
+    display.println("\nBMP280       OK");
+    display.display();
 
     //dht11
     dht.begin();
-    
+    display.println("DHT11        OK");
+    display.display();
     //ccs811
     if(!ccs.begin()){
         Serial.println("CCS811 ERROR");
+        display.println("CCS811 ERROR");
     } else{
-        Serial.println("CCS811 Iniciat");
+        Serial.println("CCS811 OK");
+        display.println("CCS811       OK");
     }
     ccs.setDriveMode(CCS811_DRIVE_MODE_1SEC);
-    display.println("SENSORS OK");
     display.display();
     delay(1000);
 }
@@ -199,7 +212,6 @@ void loop() {
             Serial.println("Error llegint el CCS811");
         }
     }
-
 
     static unsigned long lastMsgOLED = 0;
     unsigned long nowOLED = millis();
