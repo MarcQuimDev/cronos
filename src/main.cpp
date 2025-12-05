@@ -211,9 +211,9 @@ void loop() {
     }
 
     // leds 
-    int r = temp;
-    int g = temp;
-    int b = temp;
+    int r = bri;
+    int g = bri;
+    int b = bri;
     // Assigna el color a tots els LEDs
     for (int i = 0; i < NUM_LEDS; i++) {
         strip.setPixelColor(i, r,g,b);
