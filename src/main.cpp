@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <time.h>
 
 //llibreries
 #include <PubSubClient.h>
@@ -34,6 +35,12 @@ Adafruit_CCS811 ccs;
 // --- Wi-Fi Config ---
 const char* ssid = "Fiona2G";
 const char* password = "Pampall1g1e$";
+
+// --- TEMPS Config
+const char* ntpServer = "pool.ntp.org";
+// Zona horària Barcelona (Europe/Madrid)
+const long gmtOffset_sec = 3600;      // UTC+1
+const int daylightOffset_sec = 3600;  // +1 hora en estiu
 
 // --- MQTT Config ---
 const char* mqtt_server = "192.168.1.145";
@@ -80,6 +87,20 @@ void reconnect() {
     }
 }
 
+void temps(){
+    struct tm timeinfo;
+    static int lastMinute = -1;
+    // --- Temps ---
+    if (getLocalTime(&timeinfo)) {
+        if (timeinfo.tm_min != lastMinute) {
+            lastMinute = timeinfo.tm_min;
+        }
+        display.setCursor(0,0);
+        display.setTextSize(2);
+        display.printf("   %02d:%02d\n", timeinfo.tm_hour, timeinfo.tm_min);
+    }
+}
+
 // --- Setup ---
 void setup() {
     Serial.begin(115200);
@@ -94,20 +115,35 @@ void setup() {
     display.clearDisplay();
     display.setTextSize(2);
     if (WiFi.status() == WL_CONNECTED) {
-        display.println("WIFI OK");
+        display.println("WIFI    OK");
     }
     display.display();
     delay(200);
     client.setServer(mqtt_server, mqtt_port);
     if (client.connect("sensor1_esp32", mqtt_user, mqtt_pass)) {
-        display.println("MQTT OK");
+        display.println("MQTT    OK");
         Serial.println("MQTT configurat!");
     } else {
         display.println("MQTT ERROR");
     }
-
     display.display();
     delay(200);
+
+    //temps
+      //|-> configuracio
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    Serial.println("NTP configurat!");
+    struct tm timeinfo;
+    getLocalTime(&timeinfo);
+      //|-> variables
+    int hora = timeinfo.tm_hour;
+    int minut = timeinfo.tm_min;
+
+    char horaString[20];
+    strftime(horaString, sizeof(horaString), "%H:%M", &timeinfo);
+    display.print("HORA ");
+    display.println(horaString);
+    display.display();
 
     //bmp280
     if (!bmp.begin(0x76)) {  // dirección I2C del BMP280, a veces es 0x76 o 0x77
@@ -133,16 +169,18 @@ void setup() {
     ccs.setDriveMode(CCS811_DRIVE_MODE_1SEC);
     display.println("SENSORS OK");
     display.display();
-    delay(500);
+    delay(1000);
 }
 
 // --- Loop ---
 void loop() {
+    //connectar mqtt
     if (!client.connected()) {
         reconnect();
     }
-    client.loop();  // Manté viva la connexió
-    
+    client.loop();  // manté viva la connexió
+
+
     // --- Dades ---
     float temp = dht.readTemperature();  
     float hum = dht.readHumidity();   
@@ -172,11 +210,11 @@ void loop() {
     if (nowOLED - lastMsgOLED > 500) {
         lastMsgOLED = nowOLED;
         
-        display.setTextSize(1);
-
-        // --- Pantalla 1 ---
         display.clearDisplay();
-        display.setCursor(0, 0);
+        temps();
+        // --- Pantalla 1 ---
+        display.setTextSize(1);
+        display.setCursor(0, 20);
         display.print("Temperatura: ");
         display.print(temp);
         display.println(" C");
@@ -190,8 +228,10 @@ void loop() {
         delay(2000);
         // --- Pantalla 2 ---
         display.clearDisplay();
-        display.setCursor(0, 0);
-        display.print("\nBrillantor: ");
+        temps();
+        display.setTextSize(1);
+        display.setCursor(0, 20);
+        display.print("Brillantor: ");
         display.print((bri/500)*100);
         display.println(" %");
         display.print("\neCO2: ");
