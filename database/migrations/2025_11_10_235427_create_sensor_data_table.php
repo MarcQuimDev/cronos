@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('sensor_type')->nullable();
             $table->decimal('temperatura', 5, 2)->nullable();
             $table->decimal('humitat', 5, 2)->nullable();
+            $table->decimal('pressio', 8, 2)->nullable();
             $table->string('location')->nullable();
             $table->timestamp('timestamp')->nullable();
         });
