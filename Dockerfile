@@ -36,6 +36,13 @@ COPY --from=node-builder /app/public/build /var/www/html/public/build
 RUN test -f public/build/manifest.json || (echo "ERROR: manifest.json not copied!" && exit 1)
 RUN echo "✓ Build assets copied successfully" && ls -la public/build/
 
+# Create .env from .env.example (required for Laravel to function)
+# Render will override these with actual environment variables
+RUN if [ ! -f .env ] && [ -f .env.example ]; then \
+    cp .env.example .env && \
+    echo "✓ Created .env from .env.example"; \
+  fi
+
 # Image config
 ENV SKIP_COMPOSER 1
 ENV WEBROOT /var/www/html/public

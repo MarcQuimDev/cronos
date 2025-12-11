@@ -2,7 +2,14 @@
 
 ## Variables de Entorno Requeridas
 
-Para que la aplicación funcione correctamente en Render, debes configurar las siguientes variables de entorno en el dashboard de Render:
+⚠️ **MUY IMPORTANTE**: Debes configurar estas variables de entorno en el dashboard de Render **ANTES** del primer deploy. Sin ellas, la aplicación fallará.
+
+### Cómo Configurar Variables de Entorno en Render
+
+1. Ve a tu Web Service en Render
+2. Click en "Environment" en el menú lateral
+3. Click en "Add Environment Variable"
+4. Agrega cada variable una por una
 
 ### Variables Básicas (OBLIGATORIAS)
 
@@ -10,19 +17,19 @@ Para que la aplicación funcione correctamente en Render, debes configurar las s
 # Application
 APP_NAME=Cronos
 APP_ENV=production
-APP_KEY=                    # Se generará automáticamente en el primer deploy
+APP_KEY=                    # Se generará automáticamente, déjalo vacío por ahora
 APP_DEBUG=false
-APP_URL=https://tu-app.onrender.com
+APP_URL=https://tu-app.onrender.com  # Reemplaza con tu URL de Render
 
 # Database - MySQL (OBLIGATORIO configurar una base de datos)
 DB_CONNECTION=mysql
-DB_HOST=tu-mysql-host.render.com
+DB_HOST=tu-mysql-host.render.com    # Hostname de tu base de datos en Render
 DB_PORT=3306
-DB_DATABASE=tu_database_name
-DB_USERNAME=tu_usuario
-DB_PASSWORD=tu_password
+DB_DATABASE=tu_database_name        # Nombre de tu base de datos
+DB_USERNAME=tu_usuario              # Usuario de la base de datos
+DB_PASSWORD=tu_password             # Contraseña de la base de datos
 
-# Logging
+# Logging (IMPORTANTE para debugging)
 LOG_CHANNEL=stderr
 LOG_LEVEL=error
 ```
