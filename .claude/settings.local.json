@@ -17,7 +17,15 @@
       "Bash(composer config:*)",
       "Bash(npm run build:*)",
       "Bash(cat:*)",
-      "Bash(.gitignore)"
+      "Bash(.gitignore)",
+      "Bash(if exist resourcesviewspartials echo Directory exists)",
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(xargs:*)",
+      "Bash(if exist \"C:\\xampp\\htdocs\\laravel\\tdr\\cronos\\database\\database.sqlite\" echo Database exists)",
+      "Bash(findstr:*)",
+      "Bash(curl -o favicon.png \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAA7AAAAOwBeShxvQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAKpSURBVFiF7ZdbSFRRFIa/vTMzmjNqZZmVlZUXQi0qCxIi6EEjCEqCHnoIouwioiAIgl6KqIeiByuCoCIvRJRdCAUvhVEGZWVmVmaWetA0R8e5jTNnznp4GMfLTOYYPfWHDezN2vt/1l577X0gBCEIQQj+C4L/+oGYE6UUo1xw+1hT6MH3w6wdx+f3YRiCwIQ0fGT5rORcmIXDZ8KFCwG4XOC2yVEpMXidMb/k9iCQEgLTQC7+o0lBSqngBKQBpRY/SxYNkVbwlVatCwJSglLBCfi8YJOPsPgdhJRYVQ6khJYOeMIHJwTfSp0oHYMUINoBJxshuNzhgxKMPX0tNF7bR8fThvhgrV1AS6eOo0lFR1fwAl8/L2bd5koMqw1D+p/bY2PYugkcdOlw7hGsPVxK78dqjKlp2DYsgfqV2JpaY4M5Uwa1q7D9XW2s9kBP9+OTK9Jj5g9aQAr44gBvT/Df/O0HWm2w5qWONTby3d1NAAJWBzTWz/t9y98FJutHCmDtBuMVkz1GFwBYY/RWFVBOoKE+egFv1HnL3wWiSThhOqC6E+yxg+s9B+h4+p4Z79+KV2X/XAo+/nqC8SgFPg9cfPgKa+5MbPPnUbX2YP+UYV/bEdZfe0R6cck/HxV8XShMk81v1XHz2Rdu1fawtuoxKcedJC0oZlfNJe7tz5p4APpcgBd6XEYc21IasdpPDc58bjqM23nPJrxDmcPQajq3LjGDvpYrAO18YYe2oiLOVd1h/oVyUnK2/f7Y1pN+rS8Y1EpMgq8S5h+oQBjmCfP29XTjKK9g5e1q0o5vj/9I0DIcr79zruApDocd9/NaHN8+4W3/jLelDZRxQqx+QkxH+YfE99snYj/r+DdCEIIQBIUfHRKBfRU8N5IAAAAASUVORK5CYII=\")",
+      "Bash(copy:*)"
     ],
     "deny": [],
     "ask": []
