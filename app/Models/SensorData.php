@@ -19,6 +19,9 @@ class SensorData extends Model
         'temperatura',
         'humitat',
         'pressio',
+        'brillantor',
+        'eco2',
+        'tvoc',
         'location',
         'timestamp'
     ];
@@ -28,6 +31,9 @@ class SensorData extends Model
         'temperatura' => 'decimal:2',
         'humitat' => 'decimal:2',
         'pressio' => 'decimal:2',
+        'brillantor' => 'decimal:2',
+        'eco2' => 'decimal:2',
+        'tvoc' => 'decimal:2',
         'timestamp' => 'datetime'
     ];
 }

@@ -25,15 +25,30 @@ class DashboardController extends Controller
                 ->orderBy('timestamp', 'desc')
                 ->first();
 
+            // Get latest brightness reading
+            $brightnessData = SensorData::whereNotNull('brillantor')
+                ->orderBy('timestamp', 'desc')
+                ->first();
+
+            // Get latest CO2 reading
+            $co2Data = SensorData::whereNotNull('eco2')
+                ->orderBy('timestamp', 'desc')
+                ->first();
+
+            // Get latest TVOC reading
+            $tvocData = SensorData::whereNotNull('tvoc')
+                ->orderBy('timestamp', 'desc')
+                ->first();
+
             // If AJAX request, return only content partial with title
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'title' => 'Cronos TDR - Tauler de Sensors',
-                    'content' => view('partials.dashboard-content', compact('temperatureData', 'humidityData', 'pressureData'))->render()
+                    'content' => view('partials.dashboard-content', compact('temperatureData', 'humidityData', 'pressureData', 'brightnessData', 'co2Data', 'tvocData'))->render()
                 ]);
             }
 
-            return view('dashboard', compact('temperatureData', 'humidityData', 'pressureData'));
+            return view('dashboard', compact('temperatureData', 'humidityData', 'pressureData', 'brightnessData', 'co2Data', 'tvocData'));
         } catch (\Exception $e) {
             \Log::error('Error loading dashboard: ' . $e->getMessage());
 
@@ -134,6 +149,96 @@ class DashboardController extends Controller
             }
 
             return back()->with('error', 'Error carregant les dades de pressió');
+        }
+    }
+
+    public function brightness(Request $request)
+    {
+        try {
+            // Get paginated brightness data (50 per page for better performance)
+            $brightnessData = SensorData::whereNotNull('brillantor')
+                ->orderBy('timestamp', 'desc')
+                ->paginate(50);
+
+            // If AJAX request, return only content partial with title
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'title' => 'Dades de Brillantor',
+                    'content' => view('partials.brightness-content', compact('brightnessData'))->render()
+                ]);
+            }
+
+            return view('brightness', compact('brightnessData'));
+        } catch (\Exception $e) {
+            \Log::error('Error loading brightness data: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'error' => 'Error carregant les dades de brillantor'
+                ], 500);
+            }
+
+            return back()->with('error', 'Error carregant les dades de brillantor');
+        }
+    }
+
+    public function co2(Request $request)
+    {
+        try {
+            // Get paginated CO2 data (50 per page for better performance)
+            $co2Data = SensorData::whereNotNull('eco2')
+                ->orderBy('timestamp', 'desc')
+                ->paginate(50);
+
+            // If AJAX request, return only content partial with title
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'title' => 'Dades de CO2',
+                    'content' => view('partials.co2-content', compact('co2Data'))->render()
+                ]);
+            }
+
+            return view('co2', compact('co2Data'));
+        } catch (\Exception $e) {
+            \Log::error('Error loading CO2 data: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'error' => 'Error carregant les dades de CO2'
+                ], 500);
+            }
+
+            return back()->with('error', 'Error carregant les dades de CO2');
+        }
+    }
+
+    public function tvoc(Request $request)
+    {
+        try {
+            // Get paginated TVOC data (50 per page for better performance)
+            $tvocData = SensorData::whereNotNull('tvoc')
+                ->orderBy('timestamp', 'desc')
+                ->paginate(50);
+
+            // If AJAX request, return only content partial with title
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'title' => 'Dades de TVOC',
+                    'content' => view('partials.tvoc-content', compact('tvocData'))->render()
+                ]);
+            }
+
+            return view('tvoc', compact('tvocData'));
+        } catch (\Exception $e) {
+            \Log::error('Error loading TVOC data: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'error' => 'Error carregant les dades de TVOC'
+                ], 500);
+            }
+
+            return back()->with('error', 'Error carregant les dades de TVOC');
         }
     }
 }

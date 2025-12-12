@@ -1,0 +1,5 @@
+- Si se puede eliminar o unificar migrations: si no son necessarias eliminar-las para mejora rendimiento
+
+- Mejorar graficas: el rango de y es limitado, busca algunos rangos que tengan sentido con cada uno de los sensores. Porque ahora mismo el rango se hace a partir del mínimo y máximo entonces aunque haya un minima difrencia parece una mucho
+
+- Revisar carpeta de seedes y factories dentro de database
