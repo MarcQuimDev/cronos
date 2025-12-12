@@ -290,8 +290,8 @@ void loop() {
         Serial.println(" ppb");
         
         // --- Envia JSON per MQTT ---
-        char payload[100];
-        snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"humitat\": %.0f, \"pressio\": %.1f}", temp, hum, pres/100);
+        char payload[200];
+        snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"humitat\": %.0f, \"pressio\": %.1f, \"brillantor\": %.1f, \"eco2\": %.0f, \"tvoc\": %.0f}", temp, hum, pres/100, (bri/500)*100, eCO2, TVOC);
         
         Serial.print("Enviant JSON: ");
         Serial.println(payload);
