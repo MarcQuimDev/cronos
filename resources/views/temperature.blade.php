@@ -286,7 +286,8 @@
                     },
                     scales: {
                         y: {
-                            beginAtZero: false,
+                            min: -10,
+                            max: 50,
                             ticks: {
                                 color: 'rgb(163, 163, 163)',
                                 callback: function(value) {
