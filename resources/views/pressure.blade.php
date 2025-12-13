@@ -278,7 +278,8 @@
                     },
                     scales: {
                         y: {
-                            beginAtZero: false,
+                            min: 950,
+                            max: 1050,
                             ticks: {
                                 color: 'rgb(163, 163, 163)',
                                 callback: function(value) { return value + ' hPa'; }
