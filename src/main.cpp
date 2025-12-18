@@ -2,6 +2,7 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <Update.h>
 #include <time.h>
 
@@ -99,10 +100,11 @@ void reconnect() {
 }
 
 //OTA
-#define FW_VERSION 1.0
+#define FW_VERSION 1.1
+bool otaInProgress = false;
 
-const char* versionURL = "https://raw.githubusercontent.com/MarcQuimDev/cronos/main/version.txt";
-const char* firmwareURL = "https://https://github.com/MarcQuimDev/cronos/releases/latest/download/firmware.bin";
+const char* versionURL = "https://raw.githubusercontent.com/MarcQuimDev/cronos/esp32/version.txt";
+const char* firmwareURL = "https://github.com/MarcQuimDev/cronos/releases/latest/download/firmware.bin";
 
 void showOTAProgress(int percent) {
     display.clearDisplay();
@@ -118,49 +120,74 @@ void showOTAProgress(int percent) {
     display.display();
 }
 void performOTA() {
+    otaInProgress = true;
+
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.println("Inici OTA...");
+    display.display();
+
+    WiFiClientSecure clientSecure;
+    clientSecure.setInsecure();
+
     HTTPClient http;
-    http.begin(firmwareURL);
-    
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS); // ← CLAU
+    http.begin(clientSecure, firmwareURL);
+
     int httpCode = http.GET();
-    if (httpCode != 200) {
-        Serial.println("Error descarregant firmware");
+    Serial.printf("HTTP code: %d\n", httpCode);
+
+    if (httpCode != HTTP_CODE_OK) {
+        display.println("Error HTTP");
+        display.display();
+        delay(3000);
+        otaInProgress = false;
         return;
     }
 
-    int contentLength = http.getSize();
+    int total = http.getSize();
     WiFiClient *stream = http.getStreamPtr();
 
-    if (!Update.begin(contentLength)) {
-        Serial.println("No es pot iniciar OTA");
+    if (!Update.begin(total)) {
+        display.println("Update FAIL");
+        display.display();
+        otaInProgress = false;
         return;
     }
 
     int written = 0;
-    uint8_t buff[128] = {0};
+    uint8_t buffer[256];
 
-    while (http.connected() && written < contentLength) {
+    while (http.connected() && written < total) {
         size_t available = stream->available();
         if (available) {
-            int readBytes = stream->readBytes(buff, min((int)available, 128));
-            Update.write(buff, readBytes);
-            written += readBytes;
+            int r = stream->readBytes(buffer, min((int)available, 256));
+            Update.write(buffer, r);
+            written += r;
 
-            int percent = (written * 100) / contentLength;
-            showOTAProgress(percent);
+            int percent = (written * 100) / total;
+
+            display.clearDisplay();
+            display.println("Actualitzant OTA");
+            display.drawRect(0, 20, 128, 10, SSD1306_WHITE);
+            display.fillRect(0, 20, map(percent, 0, 100, 0, 128), 10, SSD1306_WHITE);
+            display.setCursor(0, 40);
+            display.printf("%d %%", percent);
+            display.display();
         }
         delay(1);
     }
 
     if (Update.end()) {
         display.clearDisplay();
-        display.setCursor(0, 0);
-        display.println("OTA completada!");
+        display.println("OTA OK!");
         display.println("Reiniciant...");
         display.display();
         delay(2000);
         ESP.restart();
     } else {
-        Serial.println("Error final OTA");
+        display.println("OTA ERROR");
+        display.display();
     }
 
     http.end();
@@ -168,9 +195,11 @@ void performOTA() {
 
 
 bool checkForUpdate() {
+    WiFiClientSecure clientSecure;
+    clientSecure.setInsecure(); // ← CLAU
     HTTPClient http;
-    http.begin(versionURL);
-    
+    http.begin(clientSecure, firmwareURL);
+
     int httpCode = http.GET();
     if (httpCode != 200) {
         http.end();
@@ -289,120 +318,122 @@ void loop() {
 
         if (checkForUpdate()) {
             performOTA();
+        }else{
+            Serial.println("No hi ha servei d'OTA disponible...");
         }
     }
 
-
-    // --- Dades ---
-    float temp = dht.readTemperature();  
-    float hum = dht.readHumidity();   
-    float pres = bmp.readPressure();
-    float bri = analogRead(LDR_PIN);
-    static float eCO2 = 400;  // valor per defecte
-    static float TVOC = 0;
-
-    if (ccs.available()) {
-        if (!ccs.readData()) {
-            eCO2 = ccs.geteCO2();
-            TVOC = ccs.getTVOC();
-        } else {
-            Serial.println("Error llegint CCS811");
+    if (otaInProgress == false) {
+        // --- Dades ---
+        float temp = dht.readTemperature();  
+        float hum = dht.readHumidity();   
+        float pres = bmp.readPressure();
+        float bri = analogRead(LDR_PIN);
+        static float eCO2 = 400;  // valor per defecte
+        static float TVOC = 0;
+        
+        if (ccs.available()) {
+            if (!ccs.readData()) {
+                eCO2 = ccs.geteCO2();
+                TVOC = ccs.getTVOC();
+            } else {
+                Serial.println("Error llegint CCS811");
+            }
         }
-    }
-
-    // leds 
-    int r = bri;
-    int g = bri;
-    int b = bri;
-    // Assigna el color a tots els LEDs
-    for (int i = 0; i < NUM_LEDS; i++) {
-        strip.setPixelColor(i, r,g,b);
-    }
-    strip.show();
-    
-    
-    static unsigned long lastMsgOLED = 0;
-    unsigned long nowOLED = millis();
-    static bool pantalla1 = true;
-
-    if (nowOLED - lastMsgOLED >= 2000) {
-    pantalla1 = !pantalla1; // alterna pantalla
-    lastMsgOLED = nowOLED;
-    }
-    
-    static unsigned long lastMsgSerial = 0;
-    unsigned long nowSerial = millis();
-    
-    if (pantalla1) {
-        display.clearDisplay();
-        temps();
-        // --- Pantalla 1 ---
-        display.setTextSize(1);
-        display.setCursor(0, 20);
-        display.print("Temperatura: ");
-        display.print(temp);
-        display.println(" C");
-        display.print("\nHumitat: ");
-        display.print(hum);
-        display.println(" %");
-        display.print("\nPressio: ");
-        display.print(pres/100);
-        display.println(" HPa");
-        display.display();
-    }
-    else if (!pantalla1)
-    {
-        // --- Pantalla 2 ---
-        display.clearDisplay();
-        temps();
-        display.setTextSize(1);
-        display.setCursor(0, 20);
-        display.print("Brillantor: ");
-        display.print((bri/500)*100);
-        display.println(" %");
-        display.print("\neCO2: ");
-        display.print(eCO2);
-        display.println(" ppm");
-        display.print("\nTVOC: ");
-        display.print(TVOC);
-        display.println(" ppb");
-        display.display();
-    }
-    
-    if (nowSerial - lastMsgSerial > 1000) {
-        lastMsgSerial = nowSerial;
         
-        // --- Actualitza Serial ---
-        Serial.print("Temperatura: ");
-        Serial.println(temp);
-        Serial.print("Humitat: ");
-        Serial.println(hum);
-        Serial.print("Pressio: ");
-        Serial.println(pres);
-        Serial.print("Brillantor: ");
-        Serial.print((bri/500)*100);
-        Serial.println(" %");
-        Serial.print("eCO2: ");
-        Serial.print(eCO2);
-        Serial.println(" ppm");
-        Serial.print("TVOC: ");
-        Serial.print(TVOC);
-        Serial.println(" ppb");
-        
-        // --- Envia JSON per MQTT ---
-        char payload[200];
-        snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"humitat\": %.0f, \"pressio\": %.1f, \"brillantor\": %.1f, \"eco2\": %.0f, \"tvoc\": %.0f}", temp, hum, pres/100, (bri/500)*100, eCO2, TVOC);
-        
-        Serial.print("Enviant JSON: ");
-        Serial.println(payload);
-        
-        if (client.publish("casa/", payload)) {
-            Serial.println("JSON publicat correctament!");
-        } else {
-            Serial.println("Error publicant JSON!");
+        // leds 
+        int r = bri;
+        int g = bri;
+        int b = bri;
+        // Assigna el color a tots els LEDs
+        for (int i = 0; i < NUM_LEDS; i++) {
+            strip.setPixelColor(i, r,g,b);
         }
-
-
-    }
-    
+        strip.show();
+        
+        
+        static unsigned long lastMsgOLED = 0;
+        unsigned long nowOLED = millis();
+        static bool pantalla1 = true;
+        
+        if (nowOLED - lastMsgOLED >= 2000) {
+        pantalla1 = !pantalla1; // alterna pantalla
+        lastMsgOLED = nowOLED;
+        }
+        
+        static unsigned long lastMsgSerial = 0;
+        unsigned long nowSerial = millis();
+        
+        if (pantalla1) {
+            display.clearDisplay();
+            temps();
+            // --- Pantalla 1 ---
+            display.setTextSize(1);
+            display.setCursor(0, 20);
+            display.print("Temperatura: ");
+            display.print(temp);
+            display.println(" C");
+            display.print("\nHumitat: ");
+            display.print(hum);
+            display.println(" %");
+            display.print("\nPressio: ");
+            display.print(pres/100);
+            display.println(" HPa");
+            display.display();
+        }
+        else if (!pantalla1)
+        {
+            // --- Pantalla 2 ---
+            display.clearDisplay();
+            temps();
+            display.setTextSize(1);
+            display.setCursor(0, 20);
+            display.print("Brillantor: ");
+            display.print((bri/500)*100);
+            display.println(" %");
+            display.print("\neCO2: ");
+            display.print(eCO2);
+            display.println(" ppm");
+            display.print("\nTVOC: ");
+            display.print(TVOC);
+            display.println(" ppb");
+            display.display();
+        }
+        
+        if (nowSerial - lastMsgSerial > 1000) {
+            lastMsgSerial = nowSerial;
+            
+            // --- Actualitza Serial ---
+            Serial.print("Temperatura: ");
+            Serial.println(temp);
+            Serial.print("Humitat: ");
+            Serial.println(hum);
+            Serial.print("Pressio: ");
+            Serial.println(pres);
+            Serial.print("Brillantor: ");
+            Serial.print((bri/500)*100);
+            Serial.println(" %");
+            Serial.print("eCO2: ");
+            Serial.print(eCO2);
+            Serial.println(" ppm");
+            Serial.print("TVOC: ");
+            Serial.print(TVOC);
+            Serial.println(" ppb");
+            
+            // --- Envia JSON per MQTT ---
+            char payload[200];
+            snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"humitat\": %.0f, \"pressio\": %.1f, \"brillantor\": %.1f, \"eco2\": %.0f, \"tvoc\": %.0f}", temp, hum, pres/100, (bri/500)*100, eCO2, TVOC);
+            
+            Serial.print("Enviant JSON: ");
+            Serial.println(payload);
+            
+            if (client.publish("casa/", payload)) {
+                Serial.println("JSON publicat correctament!");
+            } else {
+                Serial.println("Error publicant JSON!");
+            }
+        
+            return;
+        }
+}
 }
