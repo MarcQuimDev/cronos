@@ -1,6 +1,8 @@
 #include <WiFi.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <HTTPClient.h>
+#include <Update.h>
 #include <time.h>
 
 //llibreries
@@ -12,6 +14,7 @@
 #include <Adafruit_BMP280.h>
 #include <Adafruit_CCS811.h>
 #include <Adafruit_NeoPixel.h>
+
 
 // --- OLED --- 
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
@@ -41,8 +44,8 @@ Adafruit_BMP280 bmp; // use I2C interface
 Adafruit_CCS811 ccs;
 
 // --- Wi-Fi Config ---
-const char* ssid = "Fiona2G";
-const char* password = "Pampall1g1e$";
+const char* ssid = "iPhone de: Quim";
+const char* password = "quim4444";
 
 // --- TEMPS Config
 const char* ntpServer = "pool.ntp.org";
@@ -94,6 +97,93 @@ void reconnect() {
         }
     }
 }
+
+//OTA
+#define FW_VERSION 1.0
+
+const char* versionURL = "https://raw.githubusercontent.com/MarcQuimDev/cronos/main/version.txt";
+const char* firmwareURL = "https://https://github.com/MarcQuimDev/cronos/releases/latest/download/firmware.bin";
+
+void showOTAProgress(int percent) {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+    display.println("Actualitzant OTA...");
+    
+    display.drawRect(0, 20, 128, 10, SSD1306_WHITE);
+    display.fillRect(0, 20, map(percent, 0, 100, 0, 128), 10, SSD1306_WHITE);
+
+    display.setCursor(0, 40);
+    display.printf("%d %%", percent);
+    display.display();
+}
+void performOTA() {
+    HTTPClient http;
+    http.begin(firmwareURL);
+    
+    int httpCode = http.GET();
+    if (httpCode != 200) {
+        Serial.println("Error descarregant firmware");
+        return;
+    }
+
+    int contentLength = http.getSize();
+    WiFiClient *stream = http.getStreamPtr();
+
+    if (!Update.begin(contentLength)) {
+        Serial.println("No es pot iniciar OTA");
+        return;
+    }
+
+    int written = 0;
+    uint8_t buff[128] = {0};
+
+    while (http.connected() && written < contentLength) {
+        size_t available = stream->available();
+        if (available) {
+            int readBytes = stream->readBytes(buff, min((int)available, 128));
+            Update.write(buff, readBytes);
+            written += readBytes;
+
+            int percent = (written * 100) / contentLength;
+            showOTAProgress(percent);
+        }
+        delay(1);
+    }
+
+    if (Update.end()) {
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.println("OTA completada!");
+        display.println("Reiniciant...");
+        display.display();
+        delay(2000);
+        ESP.restart();
+    } else {
+        Serial.println("Error final OTA");
+    }
+
+    http.end();
+}
+
+
+bool checkForUpdate() {
+    HTTPClient http;
+    http.begin(versionURL);
+    
+    int httpCode = http.GET();
+    if (httpCode != 200) {
+        http.end();
+        return false;
+    }
+
+    float newVersion = http.getString().toFloat();
+    http.end();
+
+    return newVersion > FW_VERSION;
+}
+
+
 
 
 void temps(){
@@ -187,12 +277,22 @@ void setup() {
 // --- Loop ---
 void loop() {
     //connectar mqtt
-    if (!client.connected()) {
-        reconnect();
-    }
+    //if (!client.connected()) {
+    //    reconnect();
+    //}
     client.loop();  // manté viva la connexió
     
-    
+    static unsigned long lastOTACheck = 0;
+
+    if (millis() - lastOTACheck > 3000) { // 10 minuts
+        lastOTACheck = millis();
+
+        if (checkForUpdate()) {
+            performOTA();
+        }
+    }
+
+
     // --- Dades ---
     float temp = dht.readTemperature();  
     float hum = dht.readHumidity();   
