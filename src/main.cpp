@@ -345,24 +345,25 @@ void setup() {
     display.setCursor(0,0);
     display.setTextSize(1);
     display.println("Iniciant ESP32...");
+    display.setCursor(0,20);
     display.setTextSize(2);
     display.print("V");
     display.println(FW_VERSION);
     display.display();
-
     display.setTextSize(1);
     if (!setup_wifi()) {
-    display.clearDisplay();
-    display.setCursor(0,0);
-    display.println("ERROR WIFI");
-    display.display();
-    delay(5000);
-    ESP.restart();  // o deixa'l offline si prefereixes
+      display.clearDisplay();
+      display.setCursor(0,0);
+      display.println("ERROR WIFI");
+      display.display();
+      delay(5000);
+      ESP.restart();  // o deixa'l offline si prefereixes
     }
 
 
     display.clearDisplay();
     display.setTextSize(1);
+    display.setCursor(0,0);
     display.println("WIFI OK");
     display.display();
 
