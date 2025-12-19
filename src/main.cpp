@@ -273,8 +273,6 @@ void loop() {
     static unsigned long lastSend = 0;
     unsigned long now = millis();
 
-    static unsigned long lastOTA = 0;
-    unsigned long nowOTA = millis();
 
     float temp = dht.readTemperature();
     float hum = dht.readHumidity();
@@ -327,9 +325,7 @@ void loop() {
     if (now - lastSend >= 60000) {
         lastSend = now;
         sendToThingSpeak(temp, hum, pres, bri, eCO2, TVOC);
-    }
-    // Comprovar cada 60 segons a OTA
-    if (nowOTA - lastOTA >= 60000) {
+        
         // Comprovar i fer OTA si cal
         float newVersion = 0;
         if (checkForUpdate(newVersion)) {
