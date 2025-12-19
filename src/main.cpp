@@ -34,7 +34,7 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 DHT dht(DHTPIN, DHTTYPE);
 
 // --- BMP280 Sensor ---
-Adafruit_BMP280 bmp; // I2C
+Adafruit_BMP280 bmp;
 
 // --- TEMT6000 Sensor ---
 #define LDR_PIN 34
@@ -79,21 +79,19 @@ float readVersion() {
     float version;
     EEPROM.begin(4);
     EEPROM.get(0, version);
+    if (isnan(version) || version <= 0) version = 1.0; // fallback
     return version;
 }
 
 // --- Wi-Fi ---
 void setup_wifi() {
-    Serial.println();
-    Serial.print("Connectant a ");
-    Serial.println(ssid);
+    Serial.print("Connectant a "); Serial.println(ssid);
     WiFi.begin(ssid, password);
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
     }
-    Serial.println("");
-    Serial.println("WiFi connectat!");
+    Serial.println("\nWiFi connectat!");
     Serial.print("IP: "); Serial.println(WiFi.localIP());
 }
 
@@ -101,9 +99,8 @@ void setup_wifi() {
 void reconnect() {
     while (!client.connected()) {
         Serial.print("Connectant al servidor MQTT...");
-        if (client.connect("sensor1_esp32", mqtt_user, mqtt_pass)) {
-            Serial.println("connectat!");
-        } else {
+        if (client.connect("sensor1_esp32", mqtt_user, mqtt_pass)) Serial.println("connectat!");
+        else {
             Serial.print("Error, rc="); Serial.print(client.state());
             Serial.println(" — reintentant en 5 segons");
             delay(5000);
@@ -115,11 +112,11 @@ void reconnect() {
 void showOTAProgress(int percent) {
     display.clearDisplay();
     display.setTextSize(1);
-    display.setCursor(0, 0);
+    display.setCursor(0,0);
     display.println("Actualitzant OTA...");
     display.drawRect(0, 20, 128, 10, SSD1306_WHITE);
-    display.fillRect(0, 20, map(percent, 0, 100, 0, 128), 10, SSD1306_WHITE);
-    display.setCursor(0, 40);
+    display.fillRect(0, 20, map(percent,0,100,0,128), 10, SSD1306_WHITE);
+    display.setCursor(0,40);
     display.printf("%d %%", percent);
     display.display();
 }
@@ -168,7 +165,7 @@ void performOTA(float newVersion) {
             int r = stream->readBytes(buffer, min((int)available, 256));
             Update.write(buffer, r);
             written += r;
-            int percent = (written * 100) / total;
+            int percent = (written*100)/total;
             showOTAProgress(percent);
         }
         delay(1);
@@ -191,6 +188,7 @@ void performOTA(float newVersion) {
     http.end();
 }
 
+// --- Comprovar versió nova ---
 bool checkForUpdate(float &newVersion) {
     WiFiClientSecure clientSecure;
     clientSecure.setInsecure();
@@ -204,8 +202,7 @@ bool checkForUpdate(float &newVersion) {
     }
 
     newVersion = http.getString().toFloat();
-    display.println(newVersion);
-    display.display();
+    Serial.print("Versió disponible: "); Serial.println(newVersion);
     http.end();
     return newVersion > FW_VERSION;
 }
@@ -226,12 +223,13 @@ void temps() {
 void setup() {
     Serial.begin(115200);
     Serial.println("Iniciant ESP32...");
+
     FW_VERSION = readVersion();
-    Serial.print("Versió llegida: "); Serial.println(FW_VERSION);
+    Serial.print("Versió llegida EEPROM: "); Serial.println(FW_VERSION);
 
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 0);
+    display.setCursor(0,0);
     display.println("Iniciant ESP32...");
     display.display();
 
@@ -239,43 +237,37 @@ void setup() {
 
     display.clearDisplay();
     display.setTextSize(1);
-    if (WiFi.status() == WL_CONNECTED) display.println("WIFI OK");
+    display.println("WIFI OK");
     display.display();
 
+    // Comprovar i fer OTA si cal
     float newVersion = 0;
     if (checkForUpdate(newVersion)) {
+        Serial.println("Nova versió disponible. Inici OTA...");
         performOTA(newVersion);
     } else {
-        Serial.println("No hi ha servei d'OTA disponible...");
+        Serial.println("Tens la última versió.");
     }
 
-    delay(200);
+    // MQTT
     client.setServer(mqtt_server, mqtt_port);
     if (client.connect("sensor1_esp32", mqtt_user, mqtt_pass)) display.println("MQTT OK");
     else display.println("MQTT ERROR");
     display.display();
-    delay(200);
 
+    // Temps
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-    Serial.println("NTP configurat!");
 
-    if (!bmp.begin(0x76)) Serial.println("No s'ha pogut inicialitzar BMP280!");
+    // Sensors
+    if (!bmp.begin(0x76)) Serial.println("BMP280 ERROR!");
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,
                     Adafruit_BMP280::SAMPLING_X2,
                     Adafruit_BMP280::SAMPLING_X16,
                     Adafruit_BMP280::FILTER_X16,
                     Adafruit_BMP280::STANDBY_MS_500);
-    display.println("BMP280 OK");
-    display.display();
-
     dht.begin();
-    display.println("DHT11 OK");
-    display.display();
-
-    if(!ccs.begin()) display.println("CCS811 ERROR");
-    else display.println("CCS811 OK");
-    ccs.setDriveMode(CCS811_DRIVE_MODE_1SEC);
-    display.display();
+    if (!ccs.begin()) Serial.println("CCS811 ERROR!");
+    else ccs.setDriveMode(CCS811_DRIVE_MODE_1SEC);
 
     strip.begin();
     strip.show();
@@ -286,51 +278,41 @@ void loop() {
     if (!client.connected()) reconnect();
     client.loop();
 
-    float temp = dht.readTemperature();  
-    float hum = dht.readHumidity();   
+    float temp = dht.readTemperature();
+    float hum = dht.readHumidity();
     float pres = bmp.readPressure();
     float bri = analogRead(LDR_PIN);
-    static float eCO2 = 400;
-    static float TVOC = 0;
+    static float eCO2 = 400, TVOC = 0;
 
     if (ccs.available() && !ccs.readData()) {
         eCO2 = ccs.geteCO2();
         TVOC = ccs.getTVOC();
     }
 
-    for (int i = 0; i < NUM_LEDS; i++) strip.setPixelColor(i, bri, bri, bri);
+    for (int i=0;i<NUM_LEDS;i++) strip.setPixelColor(i, bri, bri, bri);
     strip.show();
 
-    static unsigned long lastMsgOLED = 0;
+    static unsigned long lastOLED=0;
     unsigned long nowOLED = millis();
-    static bool pantalla1 = true;
-
-    if (nowOLED - lastMsgOLED >= 2000) {
-        pantalla1 = !pantalla1;
-        lastMsgOLED = nowOLED;
-    }
+    static bool pantalla1=true;
+    if (nowOLED - lastOLED >= 2000) {pantalla1=!pantalla1; lastOLED=nowOLED;}
 
     display.clearDisplay();
     temps();
     display.setTextSize(1);
     display.setCursor(0,20);
-    if (pantalla1) {
-        display.printf("Temperatura: %.1f C\nHumitat: %.1f %%\nPressio: %.1f hPa", temp, hum, pres/100);
-    } else {
-        display.printf("Brillantor: %.1f %%\neCO2: %.0f ppm\nTVOC: %.0f ppb", (bri/500.0)*100, eCO2, TVOC);
-    }
+    if (pantalla1) display.printf("Temp: %.1fC\nHum: %.1f%%\nPres: %.1f hPa", temp, hum, pres/100);
+    else display.printf("Bri: %.1f%%\neCO2: %.0f ppm\nTVOC: %.0f ppb", (bri/500.0)*100, eCO2, TVOC);
     display.display();
 
-    static unsigned long lastMsgSerial = 0;
+    static unsigned long lastSerial=0;
     unsigned long nowSerial = millis();
-    if (nowSerial - lastMsgSerial > 1000) {
-        lastMsgSerial = nowSerial;
-
+    if (nowSerial - lastSerial > 1000) {
+        lastSerial=nowSerial;
         char payload[200];
-        snprintf(payload, sizeof(payload),
-            "{\"temperatura\": %.2f, \"humitat\": %.0f, \"pressio\": %.1f, \"brillantor\": %.1f, \"eco2\": %.0f, \"tvoc\": %.0f}",
+        snprintf(payload,sizeof(payload),
+            "{\"temp\": %.2f, \"hum\": %.0f, \"pres\": %.1f, \"bri\": %.1f, \"eco2\": %.0f, \"tvoc\": %.0f}",
             temp, hum, pres/100, (bri/500.0)*100, eCO2, TVOC);
-
         Serial.println(payload);
         client.publish("casa/", payload);
     }
