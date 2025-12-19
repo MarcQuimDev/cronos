@@ -38,21 +38,29 @@ jobs:
           # Copiar firmware
           cp .pio/build/esp32dev/firmware.bin release/firmware.bin
 
-          # Llegir versió actual i incrementar decimal
+          # Llegir versió actual
           if [ -f version.txt ]; then
             CURRENT_VERSION=$(cat version.txt)
           else
-            CURRENT_VERSION="1.0"
+            CURRENT_VERSION="2.1.0"
           fi
 
-          MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
-          MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+          echo "Current version: $CURRENT_VERSION"
 
-          NEW_MINOR=$((MINOR + 1))
-          VERSION="${MAJOR}.${NEW_MINOR}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+          PATCH=$((PATCH + 1))
+
+          if [ "$PATCH" -ge 10 ]; then
+            PATCH=0
+            MINOR=$((MINOR + 1))
+          fi
+
+          VERSION="$MAJOR.$MINOR.$PATCH"
 
           echo "$VERSION" > release/version.txt
           echo "Generated OTA version: $VERSION"
+
 
       - name: Update version.txt in repository
         run: |
