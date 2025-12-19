@@ -119,40 +119,51 @@ void reconnect() {
 
 // ---------- OTA ----------
 void performOTA(float newVersion) {
-  if (WiFi.SSID().startsWith("iPhone")) {
-    Serial.println("OTA BLOQUEJADA EN HOTSPOT");
-    return;
-  }
+    Serial.println("Iniciant OTA...");
+    display.clearDisplay();
+    display.println("Inici OTA...");
+    display.display();
 
-  WiFiClientSecure clientSecure;
-  clientSecure.setInsecure();
-  HTTPClient http;
+    WiFiClientSecure clientSecure;
+    clientSecure.setInsecure();
+    HTTPClient http;
 
-  http.begin(clientSecure, firmwareURL);
-  int httpCode = http.GET();
-  if (httpCode != HTTP_CODE_OK) return;
-
-  int total = http.getSize();
-  WiFiClient* stream = http.getStreamPtr();
-
-  if (!Update.begin(total)) return;
-
-  uint8_t buff[256];
-  int written = 0;
-
-  while (http.connected() && written < total) {
-    int len = stream->readBytes(buff, sizeof(buff));
-    if (len > 0) {
-      Update.write(buff, len);
-      written += len;
+    http.begin(clientSecure, firmwareURL);
+    int httpCode = http.GET();
+    if (httpCode != HTTP_CODE_OK) {
+        Serial.println("Error HTTP OTA");
+        return;
     }
-    delay(1);
-  }
 
-  if (Update.end()) {
-    saveVersion(newVersion);
-    ESP.restart();
-  }
+    int total = http.getSize();
+    WiFiClient* stream = http.getStreamPtr();
+
+    if (!Update.begin(total)) {
+        Serial.println("Update begin error");
+        return;
+    }
+
+    uint8_t buffer[256];
+    int written = 0;
+
+    while (http.connected() && written < total) {
+        int len = stream->readBytes(buffer, sizeof(buffer));
+        if (len > 0) {
+            Update.write(buffer, len);
+            written += len;
+        }
+        delay(1);
+    }
+
+    if (Update.end()) {
+        Serial.println("OTA OK, reiniciant");
+        saveVersion(newVersion);
+        ESP.restart();
+    } else {
+        Serial.println("OTA ERROR");
+    }
+
+    http.end();
 }
 
 // ---------- CHECK VERSION ----------
