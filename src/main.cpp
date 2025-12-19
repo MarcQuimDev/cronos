@@ -98,8 +98,9 @@ void showOTAProgress(int percent) {
     display.display();
 }
 
-void performOTA(float newVersion) {
+void performOTA(const String &newVersionStr) {
     otaInProgress = true;
+    float newVersion = newVersionStr.toFloat();
     display.clearDisplay();
     display.setCursor(0,0);
     display.println("Inici OTA...");
@@ -165,18 +166,33 @@ void performOTA(float newVersion) {
     http.end();
 }
 
+// --- Funció per comparar versions ---
+// Retorna true si versionB > versionA
+bool isVersionNewer(const String& versionA, const String& versionB) {
+    int majorA=0, minorA=0, patchA=0;
+    int majorB=0, minorB=0, patchB=0;
+
+    sscanf(versionA.c_str(), "%d.%d.%d", &majorA, &minorA, &patchA);
+    sscanf(versionB.c_str(), "%d.%d.%d", &majorB, &minorB, &patchB);
+
+    if (majorB > majorA) return true;
+    if (majorB < majorA) return false;
+
+    if (minorB > minorA) return true;
+    if (minorB < minorA) return false;
+
+    if (patchB > patchA) return true;
+    return false;
+}
 // --- Comprovar versió nova ---
-bool checkForUpdate(float &newVersion) {
+bool checkForUpdate(String &newVersion) {
     if (WiFi.status() != WL_CONNECTED) return false;
 
     WiFiClientSecure clientSecure;
     clientSecure.setInsecure();
-
     HTTPClient http;
 
-    // 🔥 CACHE BUSTING
-    String url = String(versionURL) + "?t=" + String(millis());
-
+    String url = String(versionURL) + "?t=" + String(millis()); // cache busting
     http.begin(clientSecure, url);
     http.addHeader("Cache-Control", "no-cache");
     http.addHeader("Pragma", "no-cache");
@@ -188,19 +204,19 @@ bool checkForUpdate(float &newVersion) {
         return false;
     }
 
-    String payload = http.getString();
-    payload.trim();
-    newVersion = payload.toFloat();
+    newVersion = http.getString();
+    newVersion.trim();
 
-    Serial.print("FW local: ");
-    Serial.print(FW_VERSION);
-    Serial.print(" | FW remote: ");
-    Serial.println(newVersion);
+    Serial.print("FW local: "); Serial.print(FW_VERSION);
+    Serial.print(" | FW remote: "); Serial.println(newVersion);
 
     http.end();
 
-    return (newVersion - FW_VERSION) > 0.01;
+    // Comparar versions com a strings
+    String currentVersion = String((int)FW_VERSION) + ".0.0"; // converteix float a "X.0.0"
+    return isVersionNewer(currentVersion, newVersion);
 }
+
 
 // --- Wi-Fi ---
 bool setup_wifi() {
@@ -373,7 +389,7 @@ void setup() {
     display.display();
 
     // Comprovar i fer OTA si cal
-    float newVersion = 0;
+    String newVersion;
     if (checkForUpdate(newVersion)) {
         Serial.println("Nova versió disponible. Inici OTA...");
         performOTA(newVersion);
@@ -456,7 +472,7 @@ void loop() {
         sendToThingSpeak(temp, hum, pres, bri, eCO2, TVOC);
         
         // Comprovar i fer OTA si cal
-        float newVersion = 0;
+        String newVersion;
         if (checkForUpdate(newVersion)) {
             Serial.println("Nova versió disponible. Inici OTA...");
             performOTA(newVersion);
