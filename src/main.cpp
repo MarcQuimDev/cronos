@@ -100,7 +100,7 @@ void reconnect() {
 }
 
 //OTA
-#define FW_VERSION 1.1
+#define FW_VERSION 1.3
 bool otaInProgress = false;
 
 const char* versionURL = "https://raw.githubusercontent.com/MarcQuimDev/cronos/esp32/version.txt";
@@ -246,7 +246,7 @@ void setup() {
     display.clearDisplay();
     display.setTextSize(1);
     if (WiFi.status() == WL_CONNECTED) {
-        display.println("WIFI         OK");
+        display.println("WIFI         OKEY");
     }
     display.display();
 
