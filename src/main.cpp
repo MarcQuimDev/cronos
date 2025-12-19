@@ -198,7 +198,7 @@ bool checkForUpdate() {
     WiFiClientSecure clientSecure;
     clientSecure.setInsecure(); // ← CLAU
     HTTPClient http;
-    http.begin(clientSecure, firmwareURL);
+    http.begin(clientSecure, versionURL);
 
     int httpCode = http.GET();
     if (httpCode != 200) {
@@ -207,6 +207,7 @@ bool checkForUpdate() {
     }
 
     float newVersion = http.getString().toFloat();
+    Serial.println(newVersion);
     http.end();
 
     return newVersion > FW_VERSION;
@@ -271,7 +272,7 @@ void setup() {
     }else{
         Serial.println("No hi ha servei d'OTA disponible...");
     }
-    
+
     //temps
       //|-> configuracio
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
