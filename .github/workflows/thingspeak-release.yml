@@ -3,7 +3,7 @@ name: ESP32 Build & Release
 on:
   push:
     branches:
-      - esp32
+      - thingspeak
     paths-ignore:
       - "version.txt"
 
