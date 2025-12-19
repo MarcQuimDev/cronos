@@ -38,23 +38,32 @@ jobs:
           # Copiar firmware
           cp .pio/build/esp32dev/firmware.bin release/firmware.bin
 
-          # Calcular versió OTA (només número)
-          COMMIT_COUNT=$(git rev-list --count HEAD)
-          VERSION="1.${COMMIT_COUNT}"
+          # Llegir versió actual i incrementar decimal
+          if [ -f version.txt ]; then
+            CURRENT_VERSION=$(cat version.txt)
+          else
+            CURRENT_VERSION="1.0"
+          fi
 
-          echo "${VERSION}" > release/version.txt
-          echo "Generated OTA version: ${VERSION}"
+          MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+
+          NEW_MINOR=$((MINOR + 1))
+          VERSION="${MAJOR}.${NEW_MINOR}"
+
+          echo "$VERSION" > release/version.txt
+          echo "Generated OTA version: $VERSION"
 
       - name: Update version.txt in repository
         run: |
           VERSION=$(cat release/version.txt)
-          echo "${VERSION}" > version.txt
+          echo "$VERSION" > version.txt
 
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
           git add version.txt
-          git commit -m "chore: bump OTA version to ${VERSION}" || echo "No changes"
+          git commit -m "chore: bump OTA version to $VERSION" || echo "No changes"
           git push
 
       - name: Compute short SHA
