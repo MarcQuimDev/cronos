@@ -46,7 +46,7 @@ const char* ssid = "Fiona2G";
 const char* password = "Pampall1g1e$";
 
 // --- ThingSpeak ---
-const char* thingspeak_api_key = "TJPZUQ9UXUE0TO15"; // Canvia-ho per la teva Write API Key
+const char* thingspeak_api_key = "GGT475PPCUXYN7E8"; // Canvia-ho per la teva Write API Key
 const char* thingspeak_server = "http://api.thingspeak.com/update";
 
 // --- Temps ---
