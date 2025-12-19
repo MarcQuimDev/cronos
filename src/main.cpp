@@ -42,8 +42,18 @@ Adafruit_BMP280 bmp;
 Adafruit_CCS811 ccs;
 
 // --- Wi-Fi ---
-const char* ssid = "Fiona2G";
-const char* password = "Pampall1g1e$";
+struct WiFiCred {
+    const char* ssid;
+    const char* pass;
+};
+
+WiFiCred wifiList[] = {
+    {"Fiona2G", "Pampall1g1e$"},
+    {"iPhone de: Quim", "quim4444"},
+};
+
+const int WIFI_COUNT = sizeof(wifiList) / sizeof(wifiList[0]);
+
 
 // --- ThingSpeak ---
 const char* thingspeak_api_key = "GGT475PPCUXYN7E8"; // Canvia-ho per la teva Write API Key
@@ -175,15 +185,39 @@ bool checkForUpdate(float &newVersion) {
 }
 
 // --- Wi-Fi ---
-void setup_wifi() {
-    Serial.print("Connectant a "); Serial.println(ssid);
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
+bool setup_wifi() {
+    Serial.println("Connectant a WiFi...");
+
+    WiFi.mode(WIFI_STA);
+
+    for (int i = 0; i < WIFI_COUNT; i++) {
+        Serial.print("Intentant: ");
+        Serial.println(wifiList[i].ssid);
+
+        WiFi.begin(wifiList[i].ssid, wifiList[i].pass);
+
+        unsigned long start = millis();
+        while (WiFi.status() != WL_CONNECTED && millis() - start < 10000) {
+            delay(500);
+            Serial.print(".");
+        }
+
+        if (WiFi.status() == WL_CONNECTED) {
+            Serial.println("\nWiFi connectat!");
+            Serial.print("SSID: ");
+            Serial.println(wifiList[i].ssid);
+            Serial.print("IP: ");
+            Serial.println(WiFi.localIP());
+            return true;
+        }
+
+        Serial.println("\nNo connectat, provant següent...");
+        WiFi.disconnect(true);
         delay(500);
-        Serial.print(".");
     }
-    Serial.println("\nWiFi connectat!");
-    Serial.print("IP: "); Serial.println(WiFi.localIP());
+
+    Serial.println("❌ No s'ha pogut connectar a cap WiFi");
+    return false;
 }
 
 // --- Temps ---
@@ -234,7 +268,15 @@ void setup() {
     display.println("Iniciant ESP32...");
     display.display();
 
-    setup_wifi();
+    if (!setup_wifi()) {
+    display.clearDisplay();
+    display.setCursor(0,0);
+    display.println("ERROR WIFI");
+    display.display();
+    delay(5000);
+    ESP.restart();  // o deixa'l offline si prefereixes
+    }
+
 
     display.clearDisplay();
     display.setTextSize(1);
