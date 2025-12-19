@@ -232,9 +232,8 @@ void ensureWiFi() {
 }
 
 void checkSensors() {
-    display.clearDisplay();
     display.setTextSize(1);
-    display.setCursor(0,0);
+    display.setCursor(0,10);
 
     Serial.println("=== COMPROVACIÓ DE SENSORS ===");
 
@@ -325,11 +324,16 @@ void setup() {
     Serial.print("Versió llegida EEPROM: "); Serial.println(FW_VERSION);
 
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+    display.display();   // mostra logo
+    delay(500);
+    display.clearDisplay();
+
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0,0);
-    display.setTextSize(2);
+    display.setTextSize(1);
     display.println("Iniciant ESP32...");
-    display.print("Versio: ");
+    display.setTextSize(2);
+    display.print("V");
     display.println(FW_VERSION);
     display.display();
 
