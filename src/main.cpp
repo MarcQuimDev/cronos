@@ -65,7 +65,7 @@ const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 3600;
 
 // --- OTA ---
-float FW_VERSION = 2.0;
+float FW_VERSION;
 bool otaInProgress = false;
 const char* versionURL = "https://raw.githubusercontent.com/MarcQuimDev/cronos/thingspeak/version.txt";
 const char* firmwareURL = "https://github.com/MarcQuimDev/cronos/releases/latest/download/firmware.bin";
@@ -265,9 +265,13 @@ void setup() {
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0,0);
+    display.setTextSize(2);
     display.println("Iniciant ESP32...");
+    display.print("Versio: ");
+    display.println(FW_VERSION);
     display.display();
 
+    display.setTextSize(1);
     if (!setup_wifi()) {
     display.clearDisplay();
     display.setCursor(0,0);
