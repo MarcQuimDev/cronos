@@ -62,7 +62,7 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 // --- OTA ---
-float FW_VERSION = 1.0;
+float FW_VERSION = 1.2;
 bool otaInProgress = false;
 
 const char* versionURL = "https://raw.githubusercontent.com/MarcQuimDev/cronos/esp32/version.txt";
@@ -237,7 +237,7 @@ void setup() {
 
     display.clearDisplay();
     display.setTextSize(1);
-    display.println("WIFI OK...");
+    display.println("WIFI OK");
     display.display();
 
     // Comprovar i fer OTA si cal
