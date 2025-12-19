@@ -219,6 +219,68 @@ bool setup_wifi() {
     Serial.println("❌ No s'ha pogut connectar a cap WiFi");
     return false;
 }
+void ensureWiFi() {
+    static unsigned long lastAttempt = 0;
+
+    if (WiFi.status() == WL_CONNECTED) return;
+
+    if (millis() - lastAttempt < 15000) return; // evita bucle constant
+
+    lastAttempt = millis();
+    Serial.println("⚠️ WiFi perdut, reconnectant...");
+    setup_wifi();
+}
+
+void checkSensors() {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(0,0);
+
+    Serial.println("=== COMPROVACIÓ DE SENSORS ===");
+
+    // --- DHT11 ---
+    float t = dht.readTemperature();
+    if (!isnan(t)) {
+        Serial.println("DHT11 OK");
+        display.println("DHT11 OK");
+    } else {
+        Serial.println("DHT11 ERROR");
+        display.println("DHT11 ERROR");
+    }
+
+    // --- BMP280 ---
+    if (bmp.begin(0x76)) {
+        Serial.println("BMP280 OK");
+        display.println("BMP280 OK");
+    } else {
+        Serial.println("BMP280 ERROR");
+        display.println("BMP280 ERROR");
+    }
+
+    // --- CCS811 ---
+    if (ccs.begin()) {
+        Serial.println("CCS811 OK");
+        display.println("CCS811 OK");
+        ccs.setDriveMode(CCS811_DRIVE_MODE_1SEC);
+    } else {
+        Serial.println("CCS811 ERROR");
+        display.println("CCS811 ERROR");
+    }
+
+    // --- TEMT6000 (LDR) ---
+    int bri = analogRead(LDR_PIN);
+    if (bri >= 0) {
+        Serial.println("LDR OK");
+        display.println("LDR OK");
+    } else {
+        Serial.println("LDR ERROR");
+        display.println("LDR ERROR");
+    }
+
+    display.display();
+    delay(3000);
+}
+
 
 // --- Temps ---
 void temps() {
@@ -300,22 +362,20 @@ void setup() {
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
     // Sensors
-    if (!bmp.begin(0x76)) Serial.println("BMP280 ERROR!");
+    checkSensors();
     bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,
                     Adafruit_BMP280::SAMPLING_X2,
                     Adafruit_BMP280::SAMPLING_X16,
                     Adafruit_BMP280::FILTER_X16,
                     Adafruit_BMP280::STANDBY_MS_500);
     dht.begin();
-    if (!ccs.begin()) Serial.println("CCS811 ERROR!");
-    else ccs.setDriveMode(CCS811_DRIVE_MODE_1SEC);
-
     strip.begin();
     strip.show();
 }
 
 // --- Loop ---
 void loop() {
+    ensureWiFi();
     static unsigned long lastSend = 0;
     unsigned long now = millis();
 
