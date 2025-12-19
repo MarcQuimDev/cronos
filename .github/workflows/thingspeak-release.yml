@@ -30,6 +30,13 @@ jobs:
 
       - name: Build firmware (esp32dev)
         run: pio run -e esp32dev
+        
+      - name: Tag release with version
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag -f ${{ env.VERSION }}
+          git push origin ${{ env.VERSION }} --force
 
       - name: Prepare release files
         run: |
