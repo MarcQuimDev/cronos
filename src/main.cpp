@@ -167,21 +167,34 @@ void performOTA(float newVersion) {
 
 // --- Comprovar versió nova ---
 bool checkForUpdate(float &newVersion) {
+    if (WiFi.status() != WL_CONNECTED) return false;
+
     WiFiClientSecure clientSecure;
     clientSecure.setInsecure();
+
     HTTPClient http;
     http.begin(clientSecure, versionURL);
 
+    // 🔥 FORÇA NO CACHE
+    http.addHeader("Cache-Control", "no-cache");
+    http.addHeader("Pragma", "no-cache");
+
     int httpCode = http.GET();
-    if (httpCode != 200) {
+    if (httpCode != HTTP_CODE_OK) {
         http.end();
         return false;
     }
 
-    newVersion = http.getString().toFloat();
-    Serial.print("Versió disponible: "); Serial.println(newVersion);
+    String payload = http.getString();
+    payload.trim();   // elimina \n i espais
+    newVersion = payload.toFloat();
+
+    Serial.print("Versio remota: ");
+    Serial.println(newVersion);
+
     http.end();
-    return newVersion > FW_VERSION;
+
+    return (newVersion - FW_VERSION) > 0.01;
 }
 
 // --- Wi-Fi ---
