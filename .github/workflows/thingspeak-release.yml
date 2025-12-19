@@ -35,8 +35,9 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git tag -f ${{ env.VERSION }}
+          git tag -a ${{ env.VERSION }} -m "Release ${{ env.VERSION }}"
           git push origin ${{ env.VERSION }} --force
+
 
       - name: Prepare release files
         run: |
