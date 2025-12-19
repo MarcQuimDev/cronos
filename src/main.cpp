@@ -246,7 +246,7 @@ void setup() {
     display.clearDisplay();
     display.setTextSize(1);
     if (WiFi.status() == WL_CONNECTED) {
-        display.println("WIFI         OK");
+        display.println("WIFI         OKEY");
     }
     display.display();
     if (checkForUpdate()) {
