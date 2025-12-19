@@ -44,7 +44,7 @@ struct WiFiCred {
 
 WiFiCred wifiList[] = {
   { "iPhone de: Quim", "quim4444" },   // Hotspot
-  { "Casa_WiFi", "passwordCasa" }      // WiFi fixa
+  { "gencat_ENS_EDU_LAB", "RObOt!c@" }      // WiFi fixa
 };
 
 const int WIFI_COUNT = sizeof(wifiList) / sizeof(wifiList[0]);
