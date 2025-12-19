@@ -207,7 +207,8 @@ bool checkForUpdate() {
     }
 
     float newVersion = http.getString().toFloat();
-    Serial.println(newVersion);
+    display.println(newVersion);
+    display.display();
     http.end();
 
     return newVersion > FW_VERSION;
@@ -251,6 +252,8 @@ void setup() {
     display.display();
 
     //ota
+    display.println(FW_VERSION);
+    display.display();
     if (checkForUpdate()) {
         performOTA();
     }else{
