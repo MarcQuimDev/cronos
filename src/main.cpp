@@ -100,7 +100,7 @@ void reconnect() {
 }
 
 //OTA
-#define FW_VERSION 1.3
+#define FW_VERSION 1.1
 bool otaInProgress = false;
 
 const char* versionURL = "https://raw.githubusercontent.com/MarcQuimDev/cronos/esp32/version.txt";
