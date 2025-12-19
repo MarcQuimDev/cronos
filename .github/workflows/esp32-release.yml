@@ -1,0 +1,66 @@
+name: ESP32 Build & Release
+
+on:
+  push:
+    branches:
+      - esp32
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: |
+          pip install --upgrade pip
+          pip install platformio
+
+      - name: Build firmware (esp32dev)
+        run: pio run -e esp32dev
+
+      - name: Update version.txt in repo
+        run: |
+          VERSION=$(cat release/version.txt)
+          echo "${VERSION}" > version.txt
+        
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+        
+          git add version.txt
+          git commit -m "chore: bump OTA version to ${VERSION}" || echo "No changes"
+          git push
+
+
+      - name: Prepare release files
+        run: |
+          mkdir release
+
+          # Copia firmware
+          cp .pio/build/esp32dev/firmware.bin release/firmware.bin
+
+          # Genera versió OTA (compatible amb toFloat())
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          VERSION="1.${COMMIT_COUNT}"
+
+          echo "${VERSION}" > release/version.txt
+          echo "Generated version: ${VERSION}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: esp32-${{ github.sha }}
+          name: ESP32 OTA build ${{ github.sha::7 }}
+          files: |
+            release/firmware.bin
+            release/version.txt
