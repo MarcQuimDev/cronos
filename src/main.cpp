@@ -6,6 +6,7 @@
 #include <Update.h>
 #include <time.h>
 #include <EEPROM.h>
+#include <ArduinoJson.h>
 
 // Llibreries
 #include <Adafruit_Sensor.h>
@@ -67,7 +68,7 @@ const int daylightOffset_sec = 3600;
 // --- OTA ---
 float FW_VERSION;
 bool otaInProgress = false;
-const char* versionURL = "https://raw.githubusercontent.com/MarcQuimDev/cronos/thingspeak/version.txt";
+const char* releasesAPI  = "https://api.github.com/repos/MarcQuimDev/cronos/releases/latest";
 const char* firmwareURL = "https://github.com/MarcQuimDev/cronos/releases/latest/download/firmware.bin";
 
 // --- EEPROM ---
@@ -184,36 +185,43 @@ bool isVersionNewer(const String& versionA, const String& versionB) {
     if (patchB > patchA) return true;
     return false;
 }
-// --- Comprovar versió nova ---
 bool checkForUpdate(String &newVersion) {
     if (WiFi.status() != WL_CONNECTED) return false;
 
-    WiFiClientSecure clientSecure;
-    clientSecure.setInsecure();
-    HTTPClient http;
+    WiFiClientSecure client;
+    client.setInsecure();
 
-    String url = String(versionURL) + "?t=" + String(millis()); // cache busting
-    http.begin(clientSecure, url);
-    http.addHeader("Cache-Control", "no-cache");
-    http.addHeader("Pragma", "no-cache");
+    HTTPClient http;
+    http.begin(client, releasesAPI);
+    http.addHeader("User-Agent", "ESP32");  // GitHub API necessita header
 
     int httpCode = http.GET();
     if (httpCode != HTTP_CODE_OK) {
+        Serial.printf("Error GET releases: %d\n", httpCode);
         http.end();
-        Serial.println("OTA version GET failed");
         return false;
     }
 
-    newVersion = http.getString();
-    newVersion.trim();
-
-    Serial.print("FW local: "); Serial.print(FW_VERSION);
-    Serial.print(" | FW remote: "); Serial.println(newVersion);
-
+    String payload = http.getString();
     http.end();
 
-    // Comparar versions com a strings
+    // Parse JSON
+    StaticJsonDocument<1024> doc;
+    DeserializationError error = deserializeJson(doc, payload);
+    if (error) {
+        Serial.println("Error parsejant JSON");
+        return false;
+    }
+
+    newVersion = doc["tag_name"].as<String>(); // exemple: "v2.3.1"
+    newVersion.replace("v", ""); // treure la v si cal
+
+    // Comparar amb la versió actual
     String currentVersion = String((int)FW_VERSION) + ".0.0"; // converteix float a "X.0.0"
+    
+    Serial.print("FW local: "); Serial.print(currentVersion);
+    Serial.print(" | FW remote: "); Serial.println(newVersion);
+
     return isVersionNewer(currentVersion, newVersion);
 }
 
