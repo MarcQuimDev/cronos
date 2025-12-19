@@ -7,7 +7,11 @@
 #include <time.h>
 #include <EEPROM.h>
 
+<<<<<<< HEAD
 // Llibreries
+=======
+#include <PubSubClient.h>
+>>>>>>> 4a2b20531d041c9ff11c41d04a0c046cce0bb280
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <Adafruit_GFX.h>
@@ -16,31 +20,27 @@
 #include <Adafruit_CCS811.h>
 #include <Adafruit_NeoPixel.h>
 
-// --- OLED --- 
+// ---------- OLED ----------
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// --- NeoPixel ---
+// ---------- NeoPixel ----------
 #define LED_PIN 17
 #define NUM_LEDS 30
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-// --- DHT Sensor ---
+// ---------- Sensors ----------
 #define DHTPIN 25
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-// --- BMP280 Sensor ---
 Adafruit_BMP280 bmp;
-
-// --- TEMT6000 Sensor ---
 #define LDR_PIN 34
-
-// --- CCS811 Sensor ---
 Adafruit_CCS811 ccs;
 
+<<<<<<< HEAD
 // --- Wi-Fi ---
 const char* ssid = "Fiona2G";
 const char* password = "Pampall1g1e$";
@@ -48,12 +48,20 @@ const char* password = "Pampall1g1e$";
 // --- ThingSpeak ---
 const char* thingspeak_api_key = "TJPZUQ9UXUE0TO15"; // canvia-ho pel teu
 const char* thingspeak_server = "http://api.thingspeak.com/update";
+=======
+// ---------- MULTI WIFI ----------
+struct WiFiCred {
+  const char* ssid;
+  const char* pass;
+};
+>>>>>>> 4a2b20531d041c9ff11c41d04a0c046cce0bb280
 
-// --- Temps ---
-const char* ntpServer = "pool.ntp.org";
-const long gmtOffset_sec = 3600;
-const int daylightOffset_sec = 3600;
+WiFiCred wifiList[] = {
+  { "iPhone de: Quim", "quim4444" },   // Hotspot
+  { "gencat_ENS_EDU_LAB", "RObOt!c@" }      // WiFi fixa
+};
 
+<<<<<<< HEAD
 // --- OTA ---
 float FW_VERSION = 1.2;
 bool otaInProgress = false;
@@ -65,28 +73,71 @@ void saveVersion(float version) {
     EEPROM.begin(4);
     EEPROM.put(0, version);
     EEPROM.commit();
+=======
+const int WIFI_COUNT = sizeof(wifiList) / sizeof(wifiList[0]);
+
+// ---------- MQTT ----------
+const char* mqtt_server = "192.168.1.145";
+const int mqtt_port = 1883;
+const char* mqtt_user = "esp32user";
+const char* mqtt_pass = "esp32pass";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+// ---------- OTA ----------
+float FW_VERSION = 1.2;
+const char* versionURL =
+"https://raw.githubusercontent.com/MarcQuimDev/cronos/esp32/version.txt";
+const char* firmwareURL =
+"https://github.com/MarcQuimDev/cronos/releases/latest/download/firmware.bin";
+
+// ---------- EEPROM ----------
+void saveVersion(float v) {
+  EEPROM.begin(8);
+  EEPROM.put(0, v);
+  EEPROM.commit();
+>>>>>>> 4a2b20531d041c9ff11c41d04a0c046cce0bb280
 }
 
 float readVersion() {
-    float version;
-    EEPROM.begin(4);
-    EEPROM.get(0, version);
-    if (isnan(version) || version <= 0) version = 1.0; // fallback
-    return version;
+  float v;
+  EEPROM.begin(8);
+  EEPROM.get(0, v);
+  if (isnan(v) || v <= 0) v = 1.0;
+  return v;
 }
 
-// --- Wi-Fi ---
-void setup_wifi() {
-    Serial.print("Connectant a "); Serial.println(ssid);
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
+// ---------- WIFI CONNECT ----------
+bool connectWiFi() {
+  WiFi.mode(WIFI_STA);
+
+  for (int i = 0; i < WIFI_COUNT; i++) {
+    Serial.printf("Intentant WiFi: %s\n", wifiList[i].ssid);
+    WiFi.begin(wifiList[i].ssid, wifiList[i].pass);
+
+    unsigned long t0 = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - t0 < 15000) {
+      delay(500);
+      Serial.print(".");
     }
-    Serial.println("\nWiFi connectat!");
-    Serial.print("IP: "); Serial.println(WiFi.localIP());
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\nWiFi CONNECTAT");
+      Serial.println(WiFi.SSID());
+      Serial.println(WiFi.localIP());
+      return true;
+    }
+
+    WiFi.disconnect(true);
+    delay(1000);
+  }
+
+  Serial.println("❌ Cap WiFi disponible");
+  return false;
 }
 
+<<<<<<< HEAD
 // --- Temps ---
 void temps() {
     struct tm timeinfo;
@@ -132,110 +183,101 @@ void showOTAProgress(int percent) {
     display.setCursor(0,40);
     display.printf("%d %%", percent);
     display.display();
+=======
+// ---------- MQTT ----------
+void reconnect() {
+  while (!client.connected()) {
+    client.connect("sensor1_esp32", mqtt_user, mqtt_pass);
+    delay(2000);
+  }
+>>>>>>> 4a2b20531d041c9ff11c41d04a0c046cce0bb280
 }
 
+// ---------- OTA ----------
 void performOTA(float newVersion) {
-    otaInProgress = true;
+    Serial.println("Iniciant OTA...");
     display.clearDisplay();
-    display.setCursor(0,0);
     display.println("Inici OTA...");
     display.display();
 
     WiFiClientSecure clientSecure;
     clientSecure.setInsecure();
-
     HTTPClient http;
-    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-    http.begin(clientSecure, firmwareURL);
 
+    http.begin(clientSecure, firmwareURL);
     int httpCode = http.GET();
-    Serial.printf("HTTP code: %d\n", httpCode);
     if (httpCode != HTTP_CODE_OK) {
-        display.println("Error HTTP");
-        display.display();
-        delay(3000);
-        otaInProgress = false;
-        http.end();
+        Serial.println("Error HTTP OTA");
         return;
     }
 
     int total = http.getSize();
-    WiFiClient *stream = http.getStreamPtr();
+    WiFiClient* stream = http.getStreamPtr();
+
     if (!Update.begin(total)) {
-        display.println("Update FAIL");
-        display.display();
-        otaInProgress = false;
-        http.end();
+        Serial.println("Update begin error");
         return;
     }
 
-    int written = 0;
     uint8_t buffer[256];
+    int written = 0;
 
     while (http.connected() && written < total) {
-        size_t available = stream->available();
-        if (available) {
-            int r = stream->readBytes(buffer, min((int)available, 256));
-            Update.write(buffer, r);
-            written += r;
-            int percent = (written*100)/total;
-            showOTAProgress(percent);
+        int len = stream->readBytes(buffer, sizeof(buffer));
+        if (len > 0) {
+            Update.write(buffer, len);
+            written += len;
         }
         delay(1);
     }
 
     if (Update.end()) {
-        display.clearDisplay();
-        display.println("OTA OK!");
-        display.println("Reiniciant...");
-        display.display();
+        Serial.println("OTA OK, reiniciant");
         saveVersion(newVersion);
-        FW_VERSION = newVersion;
-        delay(2000);
         ESP.restart();
     } else {
-        display.println("OTA ERROR");
-        display.display();
+        Serial.println("OTA ERROR");
     }
 
     http.end();
 }
 
-// --- Comprovar versió nova ---
-bool checkForUpdate(float &newVersion) {
-    WiFiClientSecure clientSecure;
-    clientSecure.setInsecure();
-    HTTPClient http;
-    http.begin(clientSecure, versionURL);
+// ---------- CHECK VERSION ----------
+bool checkForUpdate(float &newV) {
+  WiFiClientSecure clientSecure;
+  clientSecure.setInsecure();
+  HTTPClient http;
 
-    int httpCode = http.GET();
-    if (httpCode != 200) {
-        http.end();
-        return false;
-    }
+  http.begin(clientSecure, versionURL);
+  if (http.GET() != 200) return false;
 
-    newVersion = http.getString().toFloat();
-    Serial.print("Versió disponible: "); Serial.println(newVersion);
-    http.end();
-    return newVersion > FW_VERSION;
+  newV = http.getString().toFloat();
+  return newV > FW_VERSION;
 }
 
+<<<<<<< HEAD
 
 
 // --- Setup ---
+=======
+// ---------- SETUP ----------
+>>>>>>> 4a2b20531d041c9ff11c41d04a0c046cce0bb280
 void setup() {
-    Serial.begin(115200);
-    Serial.println("Iniciant ESP32...");
+  Serial.begin(115200);
 
-    FW_VERSION = readVersion();
-    Serial.print("Versió llegida EEPROM: "); Serial.println(FW_VERSION);
+  FW_VERSION = readVersion();
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setTextColor(SSD1306_WHITE);
+  display.clearDisplay();
+  display.println("Iniciant...");
+  display.display();
 
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0,0);
-    display.println("Iniciant ESP32...");
-    display.display();
+  if (connectWiFi()) {
+    float newV;
+    if (checkForUpdate(newV)) performOTA(newV);
+  }
 
+<<<<<<< HEAD
     setup_wifi();
 
     display.clearDisplay();
@@ -268,10 +310,19 @@ void setup() {
 
     strip.begin();
     strip.show();
+=======
+  client.setServer(mqtt_server, mqtt_port);
+  bmp.begin(0x76);
+  dht.begin();
+  ccs.begin();
+  strip.begin();
+  strip.show();
+>>>>>>> 4a2b20531d041c9ff11c41d04a0c046cce0bb280
 }
 
-// --- Loop ---
+// ---------- LOOP ----------
 void loop() {
+<<<<<<< HEAD
     static unsigned long lastSend = 0;
     unsigned long now = millis();
 
@@ -283,15 +334,28 @@ void loop() {
     float pres = (bmp.readPressure()/100);
     float bri = analogRead(LDR_PIN);
     static float eCO2 = 400, TVOC = 0;
+=======
+  if (!client.connected()) reconnect();
+  client.loop();
 
-    if (ccs.available() && !ccs.readData()) {
-        eCO2 = ccs.geteCO2();
-        TVOC = ccs.getTVOC();
-    }
+  float temp = dht.readTemperature();
+  float hum = dht.readHumidity();
+  float pres = bmp.readPressure() / 100;
+  float bri = analogRead(LDR_PIN);
+>>>>>>> 4a2b20531d041c9ff11c41d04a0c046cce0bb280
 
-    for (int i=0;i<NUM_LEDS;i++) strip.setPixelColor(i, bri, bri, bri);
-    strip.show();
+  static float eCO2 = 400, TVOC = 0;
+  if (ccs.available() && !ccs.readData()) {
+    eCO2 = ccs.geteCO2();
+    TVOC = ccs.getTVOC();
+  }
 
+  char payload[200];
+  snprintf(payload, sizeof(payload),
+    "{\"temp\":%.1f,\"hum\":%.1f,\"pres\":%.1f,\"bri\":%.0f,\"eco2\":%.0f,\"tvoc\":%.0f}",
+    temp, hum, pres, bri, eCO2, TVOC);
+
+<<<<<<< HEAD
     static unsigned long lastOLED=0;
     unsigned long nowOLED = millis();
     static bool pantalla1=true;
@@ -334,4 +398,8 @@ void loop() {
     }
 
     delay(100);
+=======
+  client.publish("casa/", payload);
+  delay(1000);
+>>>>>>> 4a2b20531d041c9ff11c41d04a0c046cce0bb280
 }
