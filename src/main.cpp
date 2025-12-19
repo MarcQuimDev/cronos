@@ -66,25 +66,42 @@ const long gmtOffset_sec = 3600;
 const int daylightOffset_sec = 3600;
 
 // --- OTA ---
-float FW_VERSION;
+String FW_VERSION;
 bool otaInProgress = false;
 const char* releasesAPI  = "https://api.github.com/repos/MarcQuimDev/cronos/releases/latest";
 const char* firmwareURL = "https://github.com/MarcQuimDev/cronos/releases/latest/download/firmware.bin";
 
 // --- EEPROM ---
-void saveVersion(float version) {
-    EEPROM.begin(4);
-    EEPROM.put(0, version);
+#define EEPROM_SIZE 32   // suficient per "255.255.255"
+
+void saveVersion(const String& version) {
+    EEPROM.begin(EEPROM_SIZE);
+    // Esborra zona
+    for (int i = 0; i < EEPROM_SIZE; i++) {
+        EEPROM.write(i, 0);
+    }
+    // Guarda string
+    for (int i = 0; i < version.length() && i < EEPROM_SIZE - 1; i++) {
+        EEPROM.write(i, version[i]);
+    }
     EEPROM.commit();
 }
+String readVersion() {
+    EEPROM.begin(EEPROM_SIZE);
+    char buffer[EEPROM_SIZE];
+    for (int i = 0; i < EEPROM_SIZE; i++) {
+        buffer[i] = EEPROM.read(i);
+    }
+    buffer[EEPROM_SIZE - 1] = '\0';
+    String version = String(buffer);
+    version.trim();
+    if (version.length() == 0) {
+        version = "1.0.0"; // fallback
+    }
 
-float readVersion() {
-    float version;
-    EEPROM.begin(4);
-    EEPROM.get(0, version);
-    if (isnan(version) || version <= 0) version = 1.0; // fallback
     return version;
 }
+
 
 // --- OTA ---
 void showOTAProgress(int percent) {
@@ -100,8 +117,9 @@ void showOTAProgress(int percent) {
 }
 
 void performOTA(const String &newVersionStr) {
-    otaInProgress = true;
-    float newVersion = newVersionStr.toFloat();
+    saveVersion(newVersionStr);
+    FW_VERSION = newVersionStr;
+
     display.clearDisplay();
     display.setCursor(0,0);
     display.println("Inici OTA...");
@@ -155,8 +173,8 @@ void performOTA(const String &newVersionStr) {
         display.println("OTA OK!");
         display.println("Reiniciant...");
         display.display();
-        saveVersion(newVersion);
-        FW_VERSION = newVersion;
+        saveVersion(newVersionStr);
+        FW_VERSION = newVersionStr;
         delay(2000);
         ESP.restart();
     } else {
@@ -217,7 +235,7 @@ bool checkForUpdate(String &newVersion) {
     newVersion.replace("v", ""); // treure la v si cal
 
     // Comparar amb la versió actual
-    String currentVersion = String((int)FW_VERSION) + ".0.0"; // converteix float a "X.0.0"
+    String currentVersion = FW_VERSION;
     
     Serial.print("FW local: "); Serial.print(currentVersion);
     Serial.print(" | FW remote: "); Serial.println(newVersion);
@@ -363,7 +381,11 @@ void setup() {
     Serial.println("Iniciant ESP32...");
 
     FW_VERSION = readVersion();
-    Serial.print("Versió llegida EEPROM: "); Serial.println(FW_VERSION);
+    Serial.print("Versió llegida EEPROM: "); 
+    Serial.println(FW_VERSION);
+
+
+
 
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     display.display();   // mostra logo
@@ -426,6 +448,8 @@ void loop() {
     static unsigned long lastSend = 0;
     unsigned long now = millis();
 
+    static unsigned long lastOTA = 0;
+    unsigned long nowOTA = millis();
 
     float temp = dht.readTemperature();
     float hum = dht.readHumidity();
@@ -478,7 +502,9 @@ void loop() {
     if (now - lastSend >= 60000) {
         lastSend = now;
         sendToThingSpeak(temp, hum, pres, bri, eCO2, TVOC);
-        
+    }
+    if (nowOTA - lastOTA >= 30000) {
+        lastOTA = nowOTA;
         // Comprovar i fer OTA si cal
         String newVersion;
         if (checkForUpdate(newVersion)) {
