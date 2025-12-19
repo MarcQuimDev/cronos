@@ -248,6 +248,12 @@ void setup() {
         display.println("WIFI         OK");
     }
     display.display();
+    if (checkForUpdate()) {
+        performOTA();
+    }else{
+        Serial.println("No hi ha servei d'OTA disponible...");
+    }
+
     delay(200);
     client.setServer(mqtt_server, mqtt_port);
     if (client.connect("sensor1_esp32", mqtt_user, mqtt_pass)) {
