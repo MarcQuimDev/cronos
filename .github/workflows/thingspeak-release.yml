@@ -32,6 +32,7 @@ jobs:
         run: pio run -e esp32dev
 
       - name: Prepare release files
+        id: prepare-release
         run: |
           mkdir -p release
           cp .pio/build/esp32dev/firmware.bin release/firmware.bin
@@ -55,9 +56,12 @@ jobs:
           echo "$VERSION" > release/version.txt
           echo "Generated OTA version: $VERSION"
 
+          # Exportar com a output per als altres passos
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Update version.txt in repository
         run: |
-          VERSION=$(cat release/version.txt)
+          VERSION=${{ steps.prepare-release.outputs.version }}
           echo "$VERSION" > version.txt
 
           git config user.name "github-actions"
@@ -67,11 +71,20 @@ jobs:
           git commit -m "chore: bump OTA version to $VERSION" || echo "No changes"
           git push
 
+      - name: Tag release with version
+        run: |
+          VERSION=${{ steps.prepare-release.outputs.version }}
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.prepare-release.outputs.VERSION }}
-          name: "ESP32 OTA ${{ steps.prepare-release.outputs.VERSION }}"
+          tag_name: ${{ steps.prepare-release.outputs.version }}
+          name: "ESP32 OTA ${{ steps.prepare-release.outputs.version }}"
           files: |
             release/firmware.bin
             release/version.txt
+
