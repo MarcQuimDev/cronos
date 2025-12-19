@@ -34,18 +34,13 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-
-          # Copiar firmware
           cp .pio/build/esp32dev/firmware.bin release/firmware.bin
 
-          # Llegir versió actual
           if [ -f version.txt ]; then
             CURRENT_VERSION=$(cat version.txt)
           else
-            CURRENT_VERSION="2.1.0"
+            CURRENT_VERSION="2.0.0"
           fi
-
-          echo "Current version: $CURRENT_VERSION"
 
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
 
@@ -60,6 +55,7 @@ jobs:
 
           echo "$VERSION" > release/version.txt
           echo "Generated OTA version: $VERSION"
+
 
 
       - name: Update version.txt in repository
