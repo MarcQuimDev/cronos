@@ -29,6 +29,19 @@ jobs:
       - name: Build firmware (esp32dev)
         run: pio run -e esp32dev
 
+      - name: Update version.txt in repo
+        run: |
+          VERSION=$(cat release/version.txt)
+          echo "${VERSION}" > version.txt
+        
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+        
+          git add version.txt
+          git commit -m "chore: bump OTA version to ${VERSION}" || echo "No changes"
+          git push
+
+
       - name: Prepare release files
         run: |
           mkdir release
