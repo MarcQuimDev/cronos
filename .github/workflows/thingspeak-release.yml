@@ -36,14 +36,14 @@ jobs:
           mkdir -p release
           cp .pio/build/esp32dev/firmware.bin release/firmware.bin
 
+          # Llegir versió actual i incrementar patch
           if [ -f version.txt ]; then
             CURRENT_VERSION=$(cat version.txt)
           else
-            CURRENT_VERSION="2.0.0"
+            CURRENT_VERSION="2.1.0"
           fi
 
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
-
           PATCH=$((PATCH + 1))
 
           if [ "$PATCH" -ge 10 ]; then
@@ -52,11 +52,8 @@ jobs:
           fi
 
           VERSION="$MAJOR.$MINOR.$PATCH"
-
           echo "$VERSION" > release/version.txt
           echo "Generated OTA version: $VERSION"
-
-
 
       - name: Update version.txt in repository
         run: |
@@ -70,14 +67,11 @@ jobs:
           git commit -m "chore: bump OTA version to $VERSION" || echo "No changes"
           git push
 
-      - name: Compute short SHA
-        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: esp32-${{ env.SHORT_SHA }}
-          name: ESP32 OTA build ${{ env.SHORT_SHA }}
+          tag_name: ${{ steps.prepare-release.outputs.VERSION }}
+          name: "ESP32 OTA ${{ steps.prepare-release.outputs.VERSION }}"
           files: |
             release/firmware.bin
             release/version.txt
