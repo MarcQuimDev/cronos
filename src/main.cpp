@@ -173,23 +173,28 @@ bool checkForUpdate(float &newVersion) {
     clientSecure.setInsecure();
 
     HTTPClient http;
-    http.begin(clientSecure, versionURL);
 
-    // 🔥 FORÇA NO CACHE
+    // 🔥 CACHE BUSTING
+    String url = String(versionURL) + "?t=" + String(millis());
+
+    http.begin(clientSecure, url);
     http.addHeader("Cache-Control", "no-cache");
     http.addHeader("Pragma", "no-cache");
 
     int httpCode = http.GET();
     if (httpCode != HTTP_CODE_OK) {
         http.end();
+        Serial.println("OTA version GET failed");
         return false;
     }
 
     String payload = http.getString();
-    payload.trim();   // elimina \n i espais
+    payload.trim();
     newVersion = payload.toFloat();
 
-    Serial.print("Versio remota: ");
+    Serial.print("FW local: ");
+    Serial.print(FW_VERSION);
+    Serial.print(" | FW remote: ");
     Serial.println(newVersion);
 
     http.end();
