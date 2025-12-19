@@ -237,7 +237,7 @@ void setup() {
 
     display.clearDisplay();
     display.setTextSize(1);
-    display.println("WIFI OK");
+    display.println("WIFI OK...");
     display.display();
 
     // Comprovar i fer OTA si cal
