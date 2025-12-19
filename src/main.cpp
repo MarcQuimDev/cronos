@@ -237,6 +237,8 @@ void setup() {
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
     display.setTextColor(SSD1306_WHITE);
     display.setCursor(0, 0);
+    display.println("Iniciant ESP32...");
+    display.display();
 
     //wifi + mqtt
     setup_wifi();
@@ -256,7 +258,14 @@ void setup() {
     }
     display.display();
     delay(200);
-
+    
+    //ota
+    if (checkForUpdate()) {
+        performOTA();
+    }else{
+        Serial.println("No hi ha servei d'OTA disponible...");
+    }
+    
     //temps
       //|-> configuracio
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
@@ -310,130 +319,117 @@ void loop() {
     //    reconnect();
     //}
     client.loop();  // manté viva la connexió
+
+
+    // --- Dades ---
+    float temp = dht.readTemperature();  
+    float hum = dht.readHumidity();   
+    float pres = bmp.readPressure();
+    float bri = analogRead(LDR_PIN);
+    static float eCO2 = 400;  // valor per defecte
+    static float TVOC = 0;
     
-    static unsigned long lastOTACheck = 0;
-
-    if (millis() - lastOTACheck > 3000) { // 10 minuts
-        lastOTACheck = millis();
-
-        if (checkForUpdate()) {
-            performOTA();
-        }else{
-            Serial.println("No hi ha servei d'OTA disponible...");
+    if (ccs.available()) {
+        if (!ccs.readData()) {
+            eCO2 = ccs.geteCO2();
+            TVOC = ccs.getTVOC();
+        } else {
+            Serial.println("Error llegint CCS811");
         }
     }
-
-    if (otaInProgress == false) {
-        // --- Dades ---
-        float temp = dht.readTemperature();  
-        float hum = dht.readHumidity();   
-        float pres = bmp.readPressure();
-        float bri = analogRead(LDR_PIN);
-        static float eCO2 = 400;  // valor per defecte
-        static float TVOC = 0;
+    
+    // leds 
+    int r = bri;
+    int g = bri;
+    int b = bri;
+    // Assigna el color a tots els LEDs
+    for (int i = 0; i < NUM_LEDS; i++) {
+        strip.setPixelColor(i, r,g,b);
+    }
+    strip.show();
+    
+    
+    static unsigned long lastMsgOLED = 0;
+    unsigned long nowOLED = millis();
+    static bool pantalla1 = true;
+    
+    if (nowOLED - lastMsgOLED >= 2000) {
+    pantalla1 = !pantalla1; // alterna pantalla
+    lastMsgOLED = nowOLED;
+    }
+    
+    static unsigned long lastMsgSerial = 0;
+    unsigned long nowSerial = millis();
+    
+    if (pantalla1) {
+        display.clearDisplay();
+        temps();
+        // --- Pantalla 1 ---
+        display.setTextSize(1);
+        display.setCursor(0, 20);
+        display.print("Temperatura: ");
+        display.print(temp);
+        display.println(" C");
+        display.print("\nHumitat: ");
+        display.print(hum);
+        display.println(" %");
+        display.print("\nPressio: ");
+        display.print(pres/100);
+        display.println(" HPa");
+        display.display();
+    }
+    else if (!pantalla1)
+    {
+        // --- Pantalla 2 ---
+        display.clearDisplay();
+        temps();
+        display.setTextSize(1);
+        display.setCursor(0, 20);
+        display.print("Brillantor: ");
+        display.print((bri/500)*100);
+        display.println(" %");
+        display.print("\neCO2: ");
+        display.print(eCO2);
+        display.println(" ppm");
+        display.print("\nTVOC: ");
+        display.print(TVOC);
+        display.println(" ppb");
+        display.display();
+    }
+    
+    if (nowSerial - lastMsgSerial > 1000) {
+        lastMsgSerial = nowSerial;
         
-        if (ccs.available()) {
-            if (!ccs.readData()) {
-                eCO2 = ccs.geteCO2();
-                TVOC = ccs.getTVOC();
-            } else {
-                Serial.println("Error llegint CCS811");
-            }
+        // --- Actualitza Serial ---
+        Serial.print("Temperatura: ");
+        Serial.println(temp);
+        Serial.print("Humitat: ");
+        Serial.println(hum);
+        Serial.print("Pressio: ");
+        Serial.println(pres);
+        Serial.print("Brillantor: ");
+        Serial.print((bri/500)*100);
+        Serial.println(" %");
+        Serial.print("eCO2: ");
+        Serial.print(eCO2);
+        Serial.println(" ppm");
+        Serial.print("TVOC: ");
+        Serial.print(TVOC);
+        Serial.println(" ppb");
+        
+        // --- Envia JSON per MQTT ---
+        char payload[200];
+        snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"humitat\": %.0f, \"pressio\": %.1f, \"brillantor\": %.1f, \"eco2\": %.0f, \"tvoc\": %.0f}", temp, hum, pres/100, (bri/500)*100, eCO2, TVOC);
+        
+        Serial.print("Enviant JSON: ");
+        Serial.println(payload);
+        
+        if (client.publish("casa/", payload)) {
+            Serial.println("JSON publicat correctament!");
+        } else {
+            Serial.println("Error publicant JSON!");
         }
-        
-        // leds 
-        int r = bri;
-        int g = bri;
-        int b = bri;
-        // Assigna el color a tots els LEDs
-        for (int i = 0; i < NUM_LEDS; i++) {
-            strip.setPixelColor(i, r,g,b);
-        }
-        strip.show();
-        
-        
-        static unsigned long lastMsgOLED = 0;
-        unsigned long nowOLED = millis();
-        static bool pantalla1 = true;
-        
-        if (nowOLED - lastMsgOLED >= 2000) {
-        pantalla1 = !pantalla1; // alterna pantalla
-        lastMsgOLED = nowOLED;
-        }
-        
-        static unsigned long lastMsgSerial = 0;
-        unsigned long nowSerial = millis();
-        
-        if (pantalla1) {
-            display.clearDisplay();
-            temps();
-            // --- Pantalla 1 ---
-            display.setTextSize(1);
-            display.setCursor(0, 20);
-            display.print("Temperatura: ");
-            display.print(temp);
-            display.println(" C");
-            display.print("\nHumitat: ");
-            display.print(hum);
-            display.println(" %");
-            display.print("\nPressio: ");
-            display.print(pres/100);
-            display.println(" HPa");
-            display.display();
-        }
-        else if (!pantalla1)
-        {
-            // --- Pantalla 2 ---
-            display.clearDisplay();
-            temps();
-            display.setTextSize(1);
-            display.setCursor(0, 20);
-            display.print("Brillantor: ");
-            display.print((bri/500)*100);
-            display.println(" %");
-            display.print("\neCO2: ");
-            display.print(eCO2);
-            display.println(" ppm");
-            display.print("\nTVOC: ");
-            display.print(TVOC);
-            display.println(" ppb");
-            display.display();
-        }
-        
-        if (nowSerial - lastMsgSerial > 1000) {
-            lastMsgSerial = nowSerial;
-            
-            // --- Actualitza Serial ---
-            Serial.print("Temperatura: ");
-            Serial.println(temp);
-            Serial.print("Humitat: ");
-            Serial.println(hum);
-            Serial.print("Pressio: ");
-            Serial.println(pres);
-            Serial.print("Brillantor: ");
-            Serial.print((bri/500)*100);
-            Serial.println(" %");
-            Serial.print("eCO2: ");
-            Serial.print(eCO2);
-            Serial.println(" ppm");
-            Serial.print("TVOC: ");
-            Serial.print(TVOC);
-            Serial.println(" ppb");
-            
-            // --- Envia JSON per MQTT ---
-            char payload[200];
-            snprintf(payload, sizeof(payload), "{\"temperatura\": %.2f, \"humitat\": %.0f, \"pressio\": %.1f, \"brillantor\": %.1f, \"eco2\": %.0f, \"tvoc\": %.0f}", temp, hum, pres/100, (bri/500)*100, eCO2, TVOC);
-            
-            Serial.print("Enviant JSON: ");
-            Serial.println(payload);
-            
-            if (client.publish("casa/", payload)) {
-                Serial.println("JSON publicat correctament!");
-            } else {
-                Serial.println("Error publicant JSON!");
-            }
-        
-            return;
-        }
+    
+        return;
 }
 }
