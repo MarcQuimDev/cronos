@@ -7,7 +7,6 @@
 #include <time.h>
 #include <EEPROM.h>
 
-// Llibreries
 #include <PubSubClient.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
@@ -17,303 +16,203 @@
 #include <Adafruit_CCS811.h>
 #include <Adafruit_NeoPixel.h>
 
-// --- OLED --- 
+// ---------- OLED ----------
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-// --- NeoPixel ---
+// ---------- NeoPixel ----------
 #define LED_PIN 17
 #define NUM_LEDS 30
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
-// --- DHT Sensor ---
+// ---------- Sensors ----------
 #define DHTPIN 25
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 
-// --- BMP280 Sensor ---
 Adafruit_BMP280 bmp;
-
-// --- TEMT6000 Sensor ---
 #define LDR_PIN 34
-
-// --- CCS811 Sensor ---
 Adafruit_CCS811 ccs;
 
-// --- Wi-Fi ---
-const char* ssid = "iPhone de: Quim";
-const char* password = "quim4444";
+// ---------- MULTI WIFI ----------
+struct WiFiCred {
+  const char* ssid;
+  const char* pass;
+};
 
-// --- Temps ---
-const char* ntpServer = "pool.ntp.org";
-const long gmtOffset_sec = 3600;
-const int daylightOffset_sec = 3600;
+WiFiCred wifiList[] = {
+  { "iPhone de: Quim", "quim4444" },   // Hotspot
+  { "Casa_WiFi", "passwordCasa" }      // WiFi fixa
+};
 
-// --- MQTT ---
+const int WIFI_COUNT = sizeof(wifiList) / sizeof(wifiList[0]);
+
+// ---------- MQTT ----------
 const char* mqtt_server = "192.168.1.145";
 const int mqtt_port = 1883;
 const char* mqtt_user = "esp32user";
 const char* mqtt_pass = "esp32pass";
 
-// --- Clients ---
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// --- OTA ---
+// ---------- OTA ----------
 float FW_VERSION = 1.2;
-bool otaInProgress = false;
+const char* versionURL =
+"https://raw.githubusercontent.com/MarcQuimDev/cronos/esp32/version.txt";
+const char* firmwareURL =
+"https://github.com/MarcQuimDev/cronos/releases/latest/download/firmware.bin";
 
-const char* versionURL = "https://raw.githubusercontent.com/MarcQuimDev/cronos/esp32/version.txt";
-const char* firmwareURL = "https://github.com/MarcQuimDev/cronos/releases/latest/download/firmware.bin";
-
-// --- EEPROM ---
-void saveVersion(float version) {
-    EEPROM.begin(4);
-    EEPROM.put(0, version);
-    EEPROM.commit();
+// ---------- EEPROM ----------
+void saveVersion(float v) {
+  EEPROM.begin(8);
+  EEPROM.put(0, v);
+  EEPROM.commit();
 }
 
 float readVersion() {
-    float version;
-    EEPROM.begin(4);
-    EEPROM.get(0, version);
-    if (isnan(version) || version <= 0) version = 1.0; // fallback
-    return version;
+  float v;
+  EEPROM.begin(8);
+  EEPROM.get(0, v);
+  if (isnan(v) || v <= 0) v = 1.0;
+  return v;
 }
 
-// --- Wi-Fi ---
-void setup_wifi() {
-    Serial.print("Connectant a "); Serial.println(ssid);
-    WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
+// ---------- WIFI CONNECT ----------
+bool connectWiFi() {
+  WiFi.mode(WIFI_STA);
+
+  for (int i = 0; i < WIFI_COUNT; i++) {
+    Serial.printf("Intentant WiFi: %s\n", wifiList[i].ssid);
+    WiFi.begin(wifiList[i].ssid, wifiList[i].pass);
+
+    unsigned long t0 = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - t0 < 15000) {
+      delay(500);
+      Serial.print(".");
     }
-    Serial.println("\nWiFi connectat!");
-    Serial.print("IP: "); Serial.println(WiFi.localIP());
+
+    if (WiFi.status() == WL_CONNECTED) {
+      Serial.println("\nWiFi CONNECTAT");
+      Serial.println(WiFi.SSID());
+      Serial.println(WiFi.localIP());
+      return true;
+    }
+
+    WiFi.disconnect(true);
+    delay(1000);
+  }
+
+  Serial.println("❌ Cap WiFi disponible");
+  return false;
 }
 
-// --- MQTT ---
+// ---------- MQTT ----------
 void reconnect() {
-    while (!client.connected()) {
-        Serial.print("Connectant al servidor MQTT...");
-        if (client.connect("sensor1_esp32", mqtt_user, mqtt_pass)) Serial.println("connectat!");
-        else {
-            Serial.print("Error, rc="); Serial.print(client.state());
-            Serial.println(" — reintentant en 5 segons");
-            delay(5000);
-        }
-    }
+  while (!client.connected()) {
+    client.connect("sensor1_esp32", mqtt_user, mqtt_pass);
+    delay(2000);
+  }
 }
 
-// --- OTA ---
-void showOTAProgress(int percent) {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setCursor(0,0);
-    display.println("Actualitzant OTA...");
-    display.drawRect(0, 20, 128, 10, SSD1306_WHITE);
-    display.fillRect(0, 20, map(percent,0,100,0,128), 10, SSD1306_WHITE);
-    display.setCursor(0,40);
-    display.printf("%d %%", percent);
-    display.display();
-}
-
+// ---------- OTA ----------
 void performOTA(float newVersion) {
-    otaInProgress = true;
-    display.clearDisplay();
-    display.setCursor(0,0);
-    display.println("Inici OTA...");
-    display.display();
+  if (WiFi.SSID().startsWith("iPhone")) {
+    Serial.println("OTA BLOQUEJADA EN HOTSPOT");
+    return;
+  }
 
-    WiFiClientSecure clientSecure;
-    clientSecure.setInsecure();
+  WiFiClientSecure clientSecure;
+  clientSecure.setInsecure();
+  HTTPClient http;
 
-    HTTPClient http;
-    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
-    http.begin(clientSecure, firmwareURL);
+  http.begin(clientSecure, firmwareURL);
+  int httpCode = http.GET();
+  if (httpCode != HTTP_CODE_OK) return;
 
-    int httpCode = http.GET();
-    Serial.printf("HTTP code: %d\n", httpCode);
-    if (httpCode != HTTP_CODE_OK) {
-        display.println("Error HTTP");
-        display.display();
-        delay(3000);
-        otaInProgress = false;
-        http.end();
-        return;
+  int total = http.getSize();
+  WiFiClient* stream = http.getStreamPtr();
+
+  if (!Update.begin(total)) return;
+
+  uint8_t buff[256];
+  int written = 0;
+
+  while (http.connected() && written < total) {
+    int len = stream->readBytes(buff, sizeof(buff));
+    if (len > 0) {
+      Update.write(buff, len);
+      written += len;
     }
+    delay(1);
+  }
 
-    int total = http.getSize();
-    WiFiClient *stream = http.getStreamPtr();
-    if (!Update.begin(total)) {
-        display.println("Update FAIL");
-        display.display();
-        otaInProgress = false;
-        http.end();
-        return;
-    }
-
-    int written = 0;
-    uint8_t buffer[256];
-
-    while (http.connected() && written < total) {
-        size_t available = stream->available();
-        if (available) {
-            int r = stream->readBytes(buffer, min((int)available, 256));
-            Update.write(buffer, r);
-            written += r;
-            int percent = (written*100)/total;
-            showOTAProgress(percent);
-        }
-        delay(1);
-    }
-
-    if (Update.end()) {
-        display.clearDisplay();
-        display.println("OTA OK!");
-        display.println("Reiniciant...");
-        display.display();
-        saveVersion(newVersion);
-        FW_VERSION = newVersion;
-        delay(2000);
-        ESP.restart();
-    } else {
-        display.println("OTA ERROR");
-        display.display();
-    }
-
-    http.end();
+  if (Update.end()) {
+    saveVersion(newVersion);
+    ESP.restart();
+  }
 }
 
-// --- Comprovar versió nova ---
-bool checkForUpdate(float &newVersion) {
-    WiFiClientSecure clientSecure;
-    clientSecure.setInsecure();
-    HTTPClient http;
-    http.begin(clientSecure, versionURL);
+// ---------- CHECK VERSION ----------
+bool checkForUpdate(float &newV) {
+  WiFiClientSecure clientSecure;
+  clientSecure.setInsecure();
+  HTTPClient http;
 
-    int httpCode = http.GET();
-    if (httpCode != 200) {
-        http.end();
-        return false;
-    }
+  http.begin(clientSecure, versionURL);
+  if (http.GET() != 200) return false;
 
-    newVersion = http.getString().toFloat();
-    Serial.print("Versió disponible: "); Serial.println(newVersion);
-    http.end();
-    return newVersion > FW_VERSION;
+  newV = http.getString().toFloat();
+  return newV > FW_VERSION;
 }
 
-// --- Temps ---
-void temps() {
-    struct tm timeinfo;
-    static int lastMinute = -1;
-    if (getLocalTime(&timeinfo)) {
-        if (timeinfo.tm_min != lastMinute) lastMinute = timeinfo.tm_min;
-        display.setCursor(0,0);
-        display.setTextSize(2);
-        display.printf("   %02d:%02d\n", timeinfo.tm_hour, timeinfo.tm_min);
-    }
-}
-
-// --- Setup ---
+// ---------- SETUP ----------
 void setup() {
-    Serial.begin(115200);
-    Serial.println("Iniciant ESP32...");
+  Serial.begin(115200);
 
-    FW_VERSION = readVersion();
-    Serial.print("Versió llegida EEPROM: "); Serial.println(FW_VERSION);
+  FW_VERSION = readVersion();
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.setTextColor(SSD1306_WHITE);
+  display.clearDisplay();
+  display.println("Iniciant...");
+  display.display();
 
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-    display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0,0);
-    display.println("Iniciant ESP32...");
-    display.display();
+  if (connectWiFi()) {
+    float newV;
+    if (checkForUpdate(newV)) performOTA(newV);
+  }
 
-    setup_wifi();
-
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.println("WIFI OK");
-    display.display();
-
-    // Comprovar i fer OTA si cal
-    float newVersion = 0;
-    if (checkForUpdate(newVersion)) {
-        Serial.println("Nova versió disponible. Inici OTA...");
-        performOTA(newVersion);
-    } else {
-        Serial.println("Tens la última versió.");
-    }
-
-    // MQTT
-    client.setServer(mqtt_server, mqtt_port);
-    if (client.connect("sensor1_esp32", mqtt_user, mqtt_pass)) display.println("MQTT OK");
-    else display.println("MQTT ERROR");
-    display.display();
-
-    // Temps
-    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-
-    // Sensors
-    if (!bmp.begin(0x76)) Serial.println("BMP280 ERROR!");
-    bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,
-                    Adafruit_BMP280::SAMPLING_X2,
-                    Adafruit_BMP280::SAMPLING_X16,
-                    Adafruit_BMP280::FILTER_X16,
-                    Adafruit_BMP280::STANDBY_MS_500);
-    dht.begin();
-    if (!ccs.begin()) Serial.println("CCS811 ERROR!");
-    else ccs.setDriveMode(CCS811_DRIVE_MODE_1SEC);
-
-    strip.begin();
-    strip.show();
+  client.setServer(mqtt_server, mqtt_port);
+  bmp.begin(0x76);
+  dht.begin();
+  ccs.begin();
+  strip.begin();
+  strip.show();
 }
 
-// --- Loop ---
+// ---------- LOOP ----------
 void loop() {
-    if (!client.connected()) reconnect();
-    client.loop();
+  if (!client.connected()) reconnect();
+  client.loop();
 
-    float temp = dht.readTemperature();
-    float hum = dht.readHumidity();
-    float pres = bmp.readPressure();
-    float bri = analogRead(LDR_PIN);
-    static float eCO2 = 400, TVOC = 0;
+  float temp = dht.readTemperature();
+  float hum = dht.readHumidity();
+  float pres = bmp.readPressure() / 100;
+  float bri = analogRead(LDR_PIN);
 
-    if (ccs.available() && !ccs.readData()) {
-        eCO2 = ccs.geteCO2();
-        TVOC = ccs.getTVOC();
-    }
+  static float eCO2 = 400, TVOC = 0;
+  if (ccs.available() && !ccs.readData()) {
+    eCO2 = ccs.geteCO2();
+    TVOC = ccs.getTVOC();
+  }
 
-    for (int i=0;i<NUM_LEDS;i++) strip.setPixelColor(i, bri, bri, bri);
-    strip.show();
+  char payload[200];
+  snprintf(payload, sizeof(payload),
+    "{\"temp\":%.1f,\"hum\":%.1f,\"pres\":%.1f,\"bri\":%.0f,\"eco2\":%.0f,\"tvoc\":%.0f}",
+    temp, hum, pres, bri, eCO2, TVOC);
 
-    static unsigned long lastOLED=0;
-    unsigned long nowOLED = millis();
-    static bool pantalla1=true;
-    if (nowOLED - lastOLED >= 2000) {pantalla1=!pantalla1; lastOLED=nowOLED;}
-
-    display.clearDisplay();
-    temps();
-    display.setTextSize(1);
-    display.setCursor(0,20);
-    if (pantalla1) display.printf("Temp: %.1fC\nHum: %.1f%%\nPres: %.1f hPa", temp, hum, pres/100);
-    else display.printf("Bri: %.1f%%\neCO2: %.0f ppm\nTVOC: %.0f ppb", (bri/500.0)*100, eCO2, TVOC);
-    display.display();
-
-    static unsigned long lastSerial=0;
-    unsigned long nowSerial = millis();
-    if (nowSerial - lastSerial > 1000) {
-        lastSerial=nowSerial;
-        char payload[200];
-        snprintf(payload,sizeof(payload),
-            "{\"temp\": %.2f, \"hum\": %.0f, \"pres\": %.1f, \"bri\": %.1f, \"eco2\": %.0f, \"tvoc\": %.0f}",
-            temp, hum, pres/100, (bri/500.0)*100, eCO2, TVOC);
-        Serial.println(payload);
-        client.publish("casa/", payload);
-    }
+  client.publish("casa/", payload);
+  delay(1000);
 }
