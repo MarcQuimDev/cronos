@@ -25,7 +25,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // --- NeoPixel ---
 #define LED_PIN 17
-#define NUM_LEDS 30
+#define NUM_LEDS 100
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // --- DHT Sensor ---
