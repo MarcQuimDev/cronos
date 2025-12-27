@@ -462,7 +462,7 @@ void loop() {
         TVOC = ccs.getTVOC();
     }
 
-    for (int i=0;i<NUM_LEDS;i++) strip.setPixelColor(i, 10, 10, 10);
+    for (int i=0;i<NUM_LEDS;i++) strip.setPixelColor(i, 255, 255, 255);
     strip.show();
 
     static unsigned long lastOLED=0;
