@@ -49,9 +49,8 @@ struct WiFiCred {
 };
 
 WiFiCred wifiList[] = {
-    {"gencat_ENS_EDU_LAB","RObOt!c@"}
-    {"Fiona2G", "Pampall1g1e$"},
-    {"iPhone de: Quim", "quim4444"},
+    {"gencat_ENS_EDU_LAB","RObOt!c@"},
+    {"iPhone de: Quim", "quim4444"}
 };
 
 const int WIFI_COUNT = sizeof(wifiList) / sizeof(wifiList[0]);
