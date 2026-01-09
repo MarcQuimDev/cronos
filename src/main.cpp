@@ -117,9 +117,6 @@ void showOTAProgress(int percent) {
 }
 
 void performOTA(const String &newVersionStr) {
-    saveVersion(newVersionStr);
-    FW_VERSION = newVersionStr;
-
     display.clearDisplay();
     display.setCursor(0,0);
     display.println("Inici OTA...");
