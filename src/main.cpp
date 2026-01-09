@@ -49,6 +49,7 @@ struct WiFiCred {
 };
 
 WiFiCred wifiList[] = {
+    {"gencat_ENS_EDU_LAB","RObOt!c@"}
     {"Fiona2G", "Pampall1g1e$"},
     {"iPhone de: Quim", "quim4444"},
 };
@@ -416,6 +417,7 @@ void setup() {
     display.setTextSize(1);
     display.setCursor(0,0);
     display.println("WIFI OK");
+    display.println(ssid);
     display.display();
 
     // Comprovar i fer OTA si cal
