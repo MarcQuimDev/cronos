@@ -416,7 +416,7 @@ void setup() {
     display.setTextSize(1);
     display.setCursor(0,0);
     display.println("WIFI OK");
-    display.println(ssid);
+    display.println(WiFi.SSID());
     display.display();
 
     // Comprovar i fer OTA si cal
