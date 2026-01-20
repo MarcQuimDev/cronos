@@ -227,14 +227,26 @@ bool checkForUpdate(String &newVersion) {
 
     WiFiClientSecure client;
     client.setInsecure();
+    client.setTimeout(15000);
 
     HTTPClient http;
+    http.setReuse(false);
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+
     http.begin(client, releasesAPI);
-    http.addHeader("User-Agent", "ESP32");  // GitHub API necessita header
+    http.addHeader("User-Agent", "ESP32");
+    http.addHeader("Accept", "application/vnd.github+json");
 
     int httpCode = http.GET();
-    if (httpCode != HTTP_CODE_OK) {
+
+    if (httpCode <= 0) {
         Serial.printf("Error GET releases: %d\n", httpCode);
+        http.end();
+        return false;
+    }
+
+    if (httpCode != HTTP_CODE_OK) {
+        Serial.printf("HTTP code GitHub: %d\n", httpCode);
         http.end();
         return false;
     }
@@ -242,25 +254,24 @@ bool checkForUpdate(String &newVersion) {
     String payload = http.getString();
     http.end();
 
-    // Parse JSON
-    StaticJsonDocument<1024> doc;
+    JsonDocument doc;
     DeserializationError error = deserializeJson(doc, payload);
     if (error) {
         Serial.println("Error parsejant JSON");
         return false;
     }
 
-    newVersion = doc["tag_name"].as<String>(); // exemple: "v2.3.1"
-    newVersion.replace("v", ""); // treure la v si cal
+    newVersion = doc["tag_name"].as<String>();
+    newVersion.replace("v", "");
 
-    // Comparar amb la versió actual
-    String currentVersion = FW_VERSION;
-    
-    Serial.print("FW local: "); Serial.print(currentVersion);
-    Serial.print(" | FW remote: "); Serial.println(newVersion);
+    Serial.print("FW local: ");
+    Serial.print(FW_VERSION);
+    Serial.print(" | FW remote: ");
+    Serial.println(newVersion);
 
-    return isVersionNewer(currentVersion, newVersion);
+    return isVersionNewer(FW_VERSION, newVersion);
 }
+
 
 
 // --- Wi-Fi ---
@@ -524,7 +535,7 @@ void loop() {
         Serial.println("📤 Enviament exacte a ThingSpeak");
     }
 
-    if (nowOTA - lastOTA >= 30000) {
+    if (nowOTA - lastOTA >= 60000) {
         lastOTA = nowOTA;
         // Comprovar i fer OTA si cal
         String newVersion;
