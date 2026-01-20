@@ -59,6 +59,27 @@ const int WIFI_COUNT = sizeof(wifiList) / sizeof(wifiList[0]);
 // --- ThingSpeak ---
 const char* thingspeak_api_key = "GGT475PPCUXYN7E8"; // Canvia-ho per la teva Write API Key
 const char* thingspeak_server = "http://api.thingspeak.com/update";
+int lastSentMinute = -1;
+
+bool enviarHora() {
+    struct tm timeinfo;
+    if (!getLocalTime(&timeinfo)) return false;
+
+    int hour   = timeinfo.tm_hour;
+    int minute = timeinfo.tm_min;
+
+    // Entre 06:00 i 14:59
+    if (hour < 6 || hour >= 15) return false;
+
+    // Només cada 5 minuts
+    if (minute % 5 != 0) return false;
+
+    // Evitar reenviar dins el mateix minut
+    if (minute == lastSentMinute) return false;
+
+    lastSentMinute = minute;
+    return true;
+}
 
 // --- Temps ---
 const char* ntpServer = "pool.ntp.org";
@@ -445,8 +466,6 @@ void setup() {
 // --- Loop ---
 void loop() {
     ensureWiFi();
-    static unsigned long lastSend = 0;
-    unsigned long now = millis();
 
     static unsigned long lastOTA = 0;
     unsigned long nowOTA = millis();
@@ -498,11 +517,12 @@ void loop() {
 
     display.display();
 
-    // Enviar dades cada 60 segons a ThingSpeak
-    if (now - lastSend >= 60000) {
-        lastSend = now;
+    // Enviar dades cada 5 minuts NOMÉS entre 6h i 15h
+    if (enviarHora()) {
         sendToThingSpeak(temp, hum, pres, bri, eCO2, TVOC);
+        Serial.println("📤 Enviament exacte a ThingSpeak");
     }
+
     if (nowOTA - lastOTA >= 30000) {
         lastOTA = nowOTA;
         // Comprovar i fer OTA si cal
