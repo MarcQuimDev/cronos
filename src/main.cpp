@@ -25,7 +25,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // --- NeoPixel ---
 #define LED_PIN 17
-#define NUM_LEDS 30
+#define NUM_LEDS 100
 Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 // --- DHT Sensor ---
@@ -49,8 +49,9 @@ struct WiFiCred {
 };
 
 WiFiCred wifiList[] = {
-    {"Fiona2G", "Pampall1g1e$"},
-    {"iPhone de: Quim", "quim4444"},
+    {"gencat_ENS_EDU_LAB","RObOt!c@"},
+    {"gencat_ENS_EDU_LAB","R0b0t!c@"},
+    {"iPhone de: Quim", "quim4444"}
 };
 
 const int WIFI_COUNT = sizeof(wifiList) / sizeof(wifiList[0]);
@@ -138,9 +139,6 @@ void showOTAProgress(int percent) {
 }
 
 void performOTA(const String &newVersionStr) {
-    saveVersion(newVersionStr);
-    FW_VERSION = newVersionStr;
-
     display.clearDisplay();
     display.setCursor(0,0);
     display.println("Inici OTA...");
@@ -437,7 +435,10 @@ void setup() {
     display.setTextSize(1);
     display.setCursor(0,0);
     display.println("WIFI OK");
+    display.println(WiFi.SSID());
+    display.println(WiFi.PASS());
     display.display();
+    delay(1000);
 
     // Comprovar i fer OTA si cal
     String newVersion;
@@ -481,7 +482,7 @@ void loop() {
         TVOC = ccs.getTVOC();
     }
 
-    for (int i=0;i<NUM_LEDS;i++) strip.setPixelColor(i, bri, bri, bri);
+    for (int i=0;i<NUM_LEDS;i++) strip.setPixelColor(i, 255, 255, 255);
     strip.show();
 
     static unsigned long lastOLED=0;
@@ -537,3 +538,4 @@ void loop() {
 
     delay(100);
 }
+//actualitzar
