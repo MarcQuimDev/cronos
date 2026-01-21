@@ -58,21 +58,21 @@
 
                     <a href="/temperature" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="Temperatura">
                         <svg class="h-6 w-6 text-cyan-400 group-hover:text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11a4 4 0 104 4V6a2 2 0 10-4 0v5zm0 0a2 2 0 110 4m3-10h.01M12 2v1m0 3V5" />
                         </svg>
                         <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Temperatura</span>
                     </a>
 
                     <a href="/humidity" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="Humitat">
                         <svg class="h-6 w-6 text-cyan-400 group-hover:text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
                         </svg>
                         <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Humitat</span>
                     </a>
 
                     <a href="/pressure" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="Pressió">
                         <svg class="h-6 w-6 text-cyan-400 group-hover:text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                         </svg>
                         <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">Pressió</span>
                     </a>
@@ -86,14 +86,14 @@
 
                     <a href="/co2" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="CO2">
                         <svg class="h-6 w-6 text-cyan-400 group-hover:text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
                         </svg>
                         <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">CO2</span>
                     </a>
 
                     <a href="/tvoc" class="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-300 hover:bg-neutral-800 hover:text-white transition-all duration-300 group border border-transparent hover:border-cyan-500/50" title="TVOC">
                         <svg class="h-6 w-6 text-cyan-400 group-hover:text-cyan-300 flex-shrink-0 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                         </svg>
                         <span class="sidebar-text font-medium whitespace-nowrap opacity-0 transition-opacity duration-300">TVOC</span>
                     </a>
@@ -117,202 +117,9 @@
 
             <!-- Main Content -->
             <div class="flex-1">
-            <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <!-- Chart Section -->
-                <div class="px-4 sm:px-0 mb-6">
-                    <div class="bg-neutral-900 shadow-xl rounded-lg p-6 border border-neutral-800">
-                        <h2 class="text-xl font-semibold text-white mb-4">Evolució de la Brillantor</h2>
-                        <div class="relative h-80">
-                            <canvas id="brightnessChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Data Table -->
-                <div class="px-4 sm:px-0">
-                    <div class="bg-neutral-900 shadow-xl rounded-lg overflow-hidden border border-neutral-800">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-neutral-800">
-                                <thead class="bg-black/30">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                            Topic
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                            Tipus de Sensor
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                            Brillantor (%)
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                            Ubicació
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                            Data/Hora
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-neutral-900 divide-y divide-neutral-800">
-                                    @forelse($brightnessData as $data)
-                                    <tr class="hover:bg-neutral-800 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-200">
-                                            {{ $data->topic }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">
-                                            {{ $data->sensor_type ?? 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                            <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full
-                                                @if($data->brillantor < 30) bg-blue-900/50 text-blue-200 border border-blue-700/50
-                                                @elseif($data->brillantor >= 30 && $data->brillantor < 70) bg-emerald-900/50 text-emerald-200 border border-emerald-700/50
-                                                @else bg-amber-900/50 text-amber-200 border border-amber-700/50
-                                                @endif">
-                                                {{ number_format($data->brillantor, 2) }}%
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">
-                                            {{ $data->location ?? 'N/A' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">
-                                            {{ $data->timestamp ? date('d/m/Y H:i:s', strtotime($data->timestamp)) : 'N/A' }}
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-8 text-center text-sm text-neutral-500">
-                                            No hi ha dades de brillantor disponibles
-                                        </td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Pagination -->
-                @if($brightnessData->hasPages())
-                <div class="px-4 sm:px-0 mt-6">
-                    <div class="bg-neutral-900 shadow-xl rounded-lg p-4 border border-neutral-800">
-                        {{ $brightnessData->links() }}
-                    </div>
-                </div>
-                @endif
-            </main>
-        </div>
+                @include('partials.brightness-content')
+            </div>
     </div>
-
-    <script>
-        // Chart.js initialization
-        (function() {
-            // Prepare data for chart (use current page data, reversed for chronological order)
-            const brightnessData = @json($brightnessData->items());
-
-            // Reverse data for chronological order (oldest to newest)
-            const reversedData = [...brightnessData].reverse();
-
-            const labels = reversedData.map(item => {
-                const date = new Date(item.timestamp);
-                return date.toLocaleString('ca-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            });
-
-            const brightness = reversedData.map(item => parseFloat(item.brillantor));
-
-            // Get or create canvas
-            const ctx = document.getElementById('brightnessChart');
-            if (!ctx) {
-                console.error('Canvas element not found');
-                return;
-            }
-
-            // Destroy existing chart if it exists (prevents memory leaks)
-            if (window.brightnessChartInstance) {
-                window.brightnessChartInstance.destroy();
-                window.brightnessChartInstance = null;
-            }
-
-            // Create new chart
-            window.brightnessChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Brillantor (%)',
-                        data: brightness,
-                        borderColor: 'rgb(34, 211, 238)',
-                        backgroundColor: 'rgba(34, 211, 238, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointBackgroundColor: 'rgb(34, 211, 238)',
-                        pointBorderColor: 'rgb(34, 211, 238)',
-                        pointHoverBackgroundColor: 'rgb(255, 255, 255)',
-                        pointHoverBorderColor: 'rgb(34, 211, 238)',
-                        pointRadius: 3,
-                        pointHoverRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            labels: {
-                                color: 'rgb(212, 212, 212)',
-                                font: {
-                                    size: 14
-                                }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(23, 23, 23, 0.9)',
-                            titleColor: 'rgb(34, 211, 238)',
-                            bodyColor: 'rgb(212, 212, 212)',
-                            borderColor: 'rgb(34, 211, 238)',
-                            borderWidth: 1,
-                            padding: 12,
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Brillantor: ' + context.parsed.y.toFixed(2) + '%';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            min: 0,
-                            max: 100,
-                            ticks: {
-                                color: 'rgb(163, 163, 163)',
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            },
-                            grid: {
-                                color: 'rgba(64, 64, 64, 0.3)'
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                color: 'rgb(163, 163, 163)',
-                                maxRotation: 45,
-                                minRotation: 45
-                            },
-                            grid: {
-                                color: 'rgba(64, 64, 64, 0.3)'
-                            }
-                        }
-                    }
-                }
-            });
-        })();
-    </script>
 
     <script>
         // Restore sidebar state on page load

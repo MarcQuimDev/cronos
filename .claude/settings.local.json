@@ -32,7 +32,8 @@
       "Bash(echo:*)",
       "Bash(composer update:*)",
       "Bash(printf:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(composer run test:*)"
     ],
     "deny": [],
     "ask": []
