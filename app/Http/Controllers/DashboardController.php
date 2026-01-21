@@ -64,6 +64,11 @@ class DashboardController extends Controller
 
     public function temperature(Request $request)
     {
+        // Validate pagination parameters to prevent abuse
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1|max:10000',
+        ]);
+
         try {
             // Get paginated temperature data (50 per page for better performance)
             $temperatureData = SensorData::whereNotNull('temperatura')
@@ -94,6 +99,11 @@ class DashboardController extends Controller
 
     public function humidity(Request $request)
     {
+        // Validate pagination parameters to prevent abuse
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1|max:10000',
+        ]);
+
         try {
             // Get paginated humidity data (50 per page for better performance)
             $humidityData = SensorData::whereNotNull('humitat')
@@ -124,6 +134,11 @@ class DashboardController extends Controller
 
     public function pressure(Request $request)
     {
+        // Validate pagination parameters to prevent abuse
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1|max:10000',
+        ]);
+
         try {
             // Get paginated pressure data (50 per page for better performance)
             $pressureData = SensorData::whereNotNull('pressio')
@@ -154,6 +169,11 @@ class DashboardController extends Controller
 
     public function brightness(Request $request)
     {
+        // Validate pagination parameters to prevent abuse
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1|max:10000',
+        ]);
+
         try {
             // Get paginated brightness data (50 per page for better performance)
             $brightnessData = SensorData::whereNotNull('brillantor')
@@ -184,6 +204,11 @@ class DashboardController extends Controller
 
     public function co2(Request $request)
     {
+        // Validate pagination parameters to prevent abuse
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1|max:10000',
+        ]);
+
         try {
             // Get paginated CO2 data (50 per page for better performance)
             $co2Data = SensorData::whereNotNull('eco2')
@@ -214,6 +239,11 @@ class DashboardController extends Controller
 
     public function tvoc(Request $request)
     {
+        // Validate pagination parameters to prevent abuse
+        $validated = $request->validate([
+            'page' => 'sometimes|integer|min:1|max:10000',
+        ]);
+
         try {
             // Get paginated TVOC data (50 per page for better performance)
             $tvocData = SensorData::whereNotNull('tvoc')
