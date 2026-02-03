@@ -110,8 +110,18 @@
         <div id="main-container" class="pre-render flex-1 ml-20 transition-all duration-300 ease-in-out flex flex-col">
             <!-- Header - Sticky -->
             <header class="sticky top-0 bg-neutral-900/95 backdrop-blur-sm shadow-lg border-b border-neutral-800 z-30">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
                     <h1 class="text-2xl font-bold text-white">Cronos TDR - Tauler de Sensors</h1>
+                    <button id="changeDateBtn" onclick="showDateModal(false)" style="display:none;"
+                        class="flex items-center gap-2 px-4 py-2 bg-neutral-800/80 border border-neutral-700 rounded-xl text-neutral-300 hover:border-cyan-500/50 hover:text-cyan-400 hover:bg-neutral-800 transition-all duration-300 group cursor-pointer">
+                        <svg class="w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span id="changeDateBtnText" class="text-sm font-medium whitespace-nowrap"></span>
+                        <svg class="w-3.5 h-3.5 text-neutral-500 group-hover:text-cyan-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </button>
                 </div>
             </header>
 
@@ -123,7 +133,219 @@
     </div>
 
     <script>
-        // Restore sidebar state on page load
+        // ── Date Modal (created dynamically via JS) ──
+        let _dateModalEl = null;
+        let _dateModalMandatory = false;
+
+        function _createDateModal() {
+            if (_dateModalEl) return _dateModalEl;
+
+            const overlay = document.createElement('div');
+            overlay.id = 'dateModalOverlay';
+            Object.assign(overlay.style, {
+                position: 'fixed', inset: '0', zIndex: '9999',
+                display: 'none', alignItems: 'center', justifyContent: 'center'
+            });
+
+            // Backdrop
+            const backdrop = document.createElement('div');
+            backdrop.id = 'dateModalBackdrop';
+            Object.assign(backdrop.style, {
+                position: 'absolute', inset: '0',
+                background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+                opacity: '0', transition: 'opacity 0.4s ease'
+            });
+            overlay.appendChild(backdrop);
+
+            // Card wrapper
+            const cardWrap = document.createElement('div');
+            cardWrap.id = 'dateModalCard';
+            Object.assign(cardWrap.style, {
+                position: 'relative', zIndex: '10',
+                opacity: '0', transform: 'scale(0.85) translateY(30px)',
+                transition: 'opacity 0.5s cubic-bezier(0.34,1.56,0.64,1), transform 0.5s cubic-bezier(0.34,1.56,0.64,1)'
+            });
+
+            const card = document.createElement('div');
+            card.style.cssText = 'position:relative;background:linear-gradient(135deg,#171717,#262626);border-radius:1rem;border:1px solid #404040;box-shadow:0 25px 50px -12px rgba(6,182,212,0.1);padding:2.5rem;width:420px;max-width:90vw;';
+
+            // Glow
+            const glow = document.createElement('div');
+            glow.id = 'dateModalGlow';
+            glow.style.cssText = 'position:absolute;inset:-2px;background:linear-gradient(90deg,rgba(6,182,212,0.2),rgba(59,130,246,0.2),rgba(168,85,247,0.2));border-radius:1rem;filter:blur(16px);opacity:0;transition:opacity 0.7s;pointer-events:none;';
+            card.appendChild(glow);
+
+            // Inner content
+            const inner = document.createElement('div');
+            inner.style.position = 'relative';
+
+            // Icon
+            inner.innerHTML = `
+                <div style="display:flex;justify-content:center;margin-bottom:1.5rem;">
+                    <div style="position:relative;">
+                        <div style="position:absolute;inset:-12px;background:rgba(6,182,212,0.2);border-radius:9999px;filter:blur(16px);animation:pulse 2s ease-in-out infinite;"></div>
+                        <div style="position:relative;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:9999px;padding:1rem;">
+                            <svg style="width:2.5rem;height:2.5rem;color:#22d3ee;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                <h2 style="font-size:1.5rem;font-weight:700;color:#fff;text-align:center;margin-bottom:0.5rem;">Selecciona una data</h2>
+                <p style="color:#a3a3a3;text-align:center;font-size:0.875rem;margin-bottom:2rem;">Escull el dia per visualitzar les dades dels sensors</p>
+            `;
+
+            // Date input
+            const inputWrap = document.createElement('div');
+            inputWrap.style.marginBottom = '2rem';
+            const input = document.createElement('input');
+            input.type = 'date';
+            input.id = 'modalDateInput';
+            input.style.cssText = 'width:100%;background:rgba(38,38,38,0.8);border:2px solid #525252;color:#f5f5f5;font-size:1.125rem;border-radius:0.75rem;padding:1rem 1.25rem;text-align:center;font-weight:500;cursor:pointer;outline:none;transition:border-color 0.3s,box-shadow 0.3s;color-scheme:dark;box-sizing:border-box;';
+            input.addEventListener('focus', function() { this.style.borderColor = '#06b6d4'; this.style.boxShadow = '0 0 0 3px rgba(6,182,212,0.2)'; });
+            input.addEventListener('blur', function() { this.style.borderColor = '#525252'; this.style.boxShadow = 'none'; });
+            input.addEventListener('change', function() {
+                const btn = document.getElementById('dateModalConfirm');
+                if (btn) { btn.disabled = !this.value; btn.style.opacity = this.value ? '1' : '0.4'; btn.style.cursor = this.value ? 'pointer' : 'not-allowed'; }
+            });
+            inputWrap.appendChild(input);
+            inner.appendChild(inputWrap);
+
+            // Confirm button
+            const confirmBtn = document.createElement('button');
+            confirmBtn.id = 'dateModalConfirm';
+            confirmBtn.disabled = true;
+            confirmBtn.style.cssText = 'width:100%;padding:0.875rem 1.5rem;background:linear-gradient(90deg,#0891b2,#2563eb);color:#fff;font-weight:600;font-size:1rem;border:none;border-radius:0.75rem;cursor:not-allowed;opacity:0.4;transition:all 0.3s;transform:scale(1);';
+            confirmBtn.innerHTML = '<span style="display:flex;align-items:center;justify-content:center;gap:0.5rem;"><svg style="width:1.25rem;height:1.25rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>Confirmar</span>';
+            confirmBtn.addEventListener('mouseenter', function() { if (!this.disabled) { this.style.background = 'linear-gradient(90deg,#06b6d4,#3b82f6)'; this.style.transform = 'scale(1.02)'; this.style.boxShadow = '0 10px 25px -5px rgba(6,182,212,0.25)'; }});
+            confirmBtn.addEventListener('mouseleave', function() { this.style.background = 'linear-gradient(90deg,#0891b2,#2563eb)'; this.style.transform = 'scale(1)'; this.style.boxShadow = 'none'; });
+            confirmBtn.addEventListener('mousedown', function() { if (!this.disabled) this.style.transform = 'scale(0.98)'; });
+            confirmBtn.addEventListener('mouseup', function() { if (!this.disabled) this.style.transform = 'scale(1.02)'; });
+            confirmBtn.addEventListener('click', confirmDateModal);
+            inner.appendChild(confirmBtn);
+
+            card.appendChild(inner);
+            cardWrap.appendChild(card);
+            overlay.appendChild(cardWrap);
+            document.body.appendChild(overlay);
+
+            // Pulse keyframe
+            if (!document.getElementById('dateModalKeyframes')) {
+                const style = document.createElement('style');
+                style.id = 'dateModalKeyframes';
+                style.textContent = '@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}';
+                document.head.appendChild(style);
+            }
+
+            _dateModalEl = overlay;
+            return overlay;
+        }
+
+        function showDateModal(mandatory) {
+            if (typeof mandatory === 'undefined') mandatory = !localStorage.getItem('selectedDate');
+            _dateModalMandatory = mandatory;
+
+            const overlay = _createDateModal();
+            const backdrop = document.getElementById('dateModalBackdrop');
+            const card = document.getElementById('dateModalCard');
+            const glow = document.getElementById('dateModalGlow');
+            const input = document.getElementById('modalDateInput');
+            const confirmBtn = document.getElementById('dateModalConfirm');
+
+            // Pre-fill
+            const current = localStorage.getItem('selectedDate');
+            if (current) input.value = current;
+            confirmBtn.disabled = !input.value;
+            confirmBtn.style.opacity = input.value ? '1' : '0.4';
+            confirmBtn.style.cursor = input.value ? 'pointer' : 'not-allowed';
+
+            overlay.style.display = 'flex';
+
+            // Backdrop click
+            if (mandatory) {
+                backdrop.style.cursor = 'default';
+                backdrop.onclick = null;
+            } else {
+                backdrop.style.cursor = 'pointer';
+                backdrop.onclick = function() { hideDateModal(); };
+            }
+
+            // Escape key
+            overlay._escHandler = function(e) {
+                if (e.key === 'Escape' && !_dateModalMandatory) hideDateModal();
+            };
+            document.addEventListener('keydown', overlay._escHandler);
+
+            // Animate in
+            requestAnimationFrame(function() {
+                backdrop.style.opacity = '1';
+                card.style.opacity = '1';
+                card.style.transform = 'scale(1) translateY(0)';
+                setTimeout(function() { glow.style.opacity = '1'; }, 300);
+            });
+        }
+
+        function hideDateModal() {
+            if (_dateModalMandatory && !localStorage.getItem('selectedDate')) return;
+
+            const overlay = document.getElementById('dateModalOverlay');
+            if (!overlay || overlay.style.display === 'none') return;
+            const backdrop = document.getElementById('dateModalBackdrop');
+            const card = document.getElementById('dateModalCard');
+            const glow = document.getElementById('dateModalGlow');
+
+            glow.style.opacity = '0';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.85) translateY(30px)';
+            backdrop.style.opacity = '0';
+
+            if (overlay._escHandler) {
+                document.removeEventListener('keydown', overlay._escHandler);
+                overlay._escHandler = null;
+            }
+
+            _dateModalMandatory = false;
+            setTimeout(function() { overlay.style.display = 'none'; }, 500);
+        }
+
+        function confirmDateModal() {
+            const input = document.getElementById('modalDateInput');
+            const date = input.value;
+            if (!date) return;
+
+            localStorage.setItem('selectedDate', date);
+            updateChangeDateBtn(date);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const autoLoad = urlParams.get('load');
+
+            hideDateModal();
+
+            if (autoLoad) {
+                history.replaceState({ url: '/' + autoLoad }, '', '/' + autoLoad);
+                loadPage('/' + autoLoad);
+            } else {
+                const currentUrl = window.location.pathname;
+                loadPage(currentUrl, false);
+            }
+        }
+
+        // ── Change date button in header ──
+        function updateChangeDateBtn(date) {
+            const btn = document.getElementById('changeDateBtn');
+            const text = document.getElementById('changeDateBtnText');
+            if (!btn || !text) return;
+            if (date) {
+                const d = new Date(date + 'T00:00:00');
+                const months = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
+                text.textContent = d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+                btn.style.display = 'flex';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        // ── Init ──
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('sidebar');
             const mainContainer = document.getElementById('main-container');
@@ -132,217 +354,130 @@
             const sidebarExpanded = localStorage.getItem('sidebarExpanded') === 'true';
 
             if (sidebarExpanded) {
-                // Expand sidebar
                 sidebar.classList.remove('w-20');
                 sidebar.classList.add('w-64');
                 mainContainer.classList.remove('ml-20');
                 mainContainer.classList.add('ml-64');
-
-                // Show text labels
-                sidebarTexts.forEach(text => {
-                    text.classList.remove('opacity-0');
-                    text.classList.add('opacity-100');
-                });
-
+                sidebarTexts.forEach(function(t) { t.classList.remove('opacity-0'); t.classList.add('opacity-100'); });
                 menuIcon.style.transform = 'rotate(90deg)';
             }
 
-            // Remove pre-render class to enable transitions
             sidebar.classList.remove('pre-render');
             mainContainer.classList.remove('pre-render');
 
-            // Setup AJAX navigation
             setupAjaxNavigation();
+
+            const savedDate = localStorage.getItem('selectedDate');
+            updateChangeDateBtn(savedDate);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const autoLoad = urlParams.get('load');
+
+            if (!savedDate) {
+                showDateModal(true);
+            } else if (autoLoad) {
+                history.replaceState({ url: '/' + autoLoad }, '', '/' + autoLoad);
+                loadPage('/' + autoLoad);
+            }
         });
 
-        // AJAX Navigation System
+        // ── AJAX Navigation ──
         function setupAjaxNavigation() {
-            const navLinks = document.querySelectorAll('nav a[href]');
-
-            navLinks.forEach(link => {
+            document.querySelectorAll('nav a[href]').forEach(function(link) {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
-                    const url = this.getAttribute('href');
-                    loadPage(url);
+                    if (!localStorage.getItem('selectedDate')) { showDateModal(true); return; }
+                    loadPage(this.getAttribute('href'));
                 });
             });
 
-            // Handle browser back/forward buttons
             window.addEventListener('popstate', function(e) {
-                if (e.state && e.state.url) {
-                    loadPage(e.state.url, false);
-                }
+                if (e.state && e.state.url) loadPage(e.state.url, false);
             });
 
-            // Save current state
             history.replaceState({ url: window.location.pathname }, '', window.location.pathname);
         }
 
-        function loadPage(url, updateHistory = true) {
-            // Show loading state
-            const contentArea = document.querySelector('#main-container .flex-1');
-            const originalContent = contentArea.innerHTML;
+        function loadPage(url, updateHistory) {
+            if (typeof updateHistory === 'undefined') updateHistory = true;
+            var contentArea = document.querySelector('#main-container .flex-1');
 
-            // Show loading indicator
-            contentArea.innerHTML = `
-                <div class="flex items-center justify-center min-h-screen">
-                    <div class="text-center">
-                        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
-                        <p class="mt-4 text-neutral-400">Carregant...</p>
-                    </div>
-                </div>
-            `;
+            contentArea.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;"><div style="text-align:center;"><div style="display:inline-block;animation:spin 1s linear infinite;border-radius:9999px;height:3rem;width:3rem;border-bottom:2px solid #22d3ee;"></div><p style="margin-top:1rem;color:#a3a3a3;">Carregant...</p></div></div>';
 
-            // Fetch content via AJAX
-            fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+            var globalDate = localStorage.getItem('selectedDate');
+            if (globalDate && url !== '/') {
+                var cleanUrl = url.replace(/([?&])date=[^&]*(&|$)/, '$1').replace(/[?&]$/, '');
+                url = cleanUrl + (cleanUrl.includes('?') ? '&' : '?') + 'date=' + globalDate;
+            }
 
-                // Update page title
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+            .then(function(r) { if (!r.ok) throw new Error('HTTP error! status: ' + r.status); return r.json(); })
+            .then(function(data) {
+                if (data.error) throw new Error(data.error);
                 document.querySelector('header h1').textContent = data.title;
-                document.title = 'Cronos - ' + data.title.replace('Cronos TDR - ', '').replace('Dades de ', '').replace('Dades d\'', '');
-
-                // Replace content
+                document.title = 'Cronos - ' + data.title.replace('Cronos TDR - ', '').replace('Dades de ', '').replace("Dades d'", '');
                 contentArea.innerHTML = data.content;
-
-                // Execute scripts in the loaded content
                 executeScripts(contentArea);
-
-                // Update active state in sidebar
+                setupPaginationLinks(contentArea);
                 updateActiveLink(url);
-
-                // Update browser history
-                if (updateHistory) {
-                    history.pushState({ url: url }, '', url);
-                }
-
-                // Scroll to top
+                if (updateHistory) { var cleanPath = url.split('?')[0]; history.pushState({ url: cleanPath }, '', cleanPath); }
                 window.scrollTo(0, 0);
             })
-            .catch(error => {
+            .catch(function(error) {
                 console.error('Error loading page:', error);
-
-                // Show error message
-                contentArea.innerHTML = `
-                    <div class="flex items-center justify-center min-h-screen">
-                        <div class="text-center bg-red-900/20 border border-red-700/50 rounded-lg p-8 max-w-md">
-                            <svg class="h-12 w-12 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <h3 class="text-lg font-semibold text-white mb-2">Error carregant la pàgina</h3>
-                            <p class="text-neutral-300 mb-4">${error.message}</p>
-                            <button onclick="location.reload()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors">
-                                Recarregar pàgina
-                            </button>
-                        </div>
-                    </div>
-                `;
+                contentArea.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;"><div style="text-align:center;background:rgba(127,29,29,0.2);border:1px solid rgba(185,28,28,0.5);border-radius:0.5rem;padding:2rem;max-width:28rem;"><svg style="height:3rem;width:3rem;color:#f87171;margin:0 auto 1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><h3 style="font-size:1.125rem;font-weight:600;color:#fff;margin-bottom:0.5rem;">Error carregant la p\u00e0gina</h3><p style="color:#d4d4d4;margin-bottom:1rem;">' + error.message + '</p><button onclick="location.reload()" style="padding:0.5rem 1rem;background:#0891b2;color:#fff;border:none;border-radius:0.5rem;cursor:pointer;">Recarregar p\u00e0gina</button></div></div>';
             });
         }
 
         function executeScripts(container) {
-            // Find all script tags in the loaded content
-            const scripts = container.querySelectorAll('script');
-
-            scripts.forEach(oldScript => {
-                // Create a new script element
-                const newScript = document.createElement('script');
-
-                // Copy attributes
-                Array.from(oldScript.attributes).forEach(attr => {
-                    newScript.setAttribute(attr.name, attr.value);
-                });
-
-                // Copy script content
-                newScript.textContent = oldScript.textContent;
-
-                // Replace old script with new one (this executes it)
-                oldScript.parentNode.replaceChild(newScript, oldScript);
+            container.querySelectorAll('script').forEach(function(old) {
+                var s = document.createElement('script');
+                Array.from(old.attributes).forEach(function(a) { s.setAttribute(a.name, a.value); });
+                s.textContent = old.textContent;
+                old.parentNode.replaceChild(s, old);
             });
         }
 
         function updateActiveLink(url) {
-            const navLinks = document.querySelectorAll('nav a[href]');
-
-            navLinks.forEach(link => {
-                const linkUrl = link.getAttribute('href');
-                if (linkUrl === url) {
-                    // Add active classes
+            var urlPath = url.split('?')[0];
+            document.querySelectorAll('nav a[href]').forEach(function(link) {
+                var href = link.getAttribute('href');
+                var svg = link.querySelector('svg');
+                if (href === urlPath) {
                     link.classList.add('bg-neutral-800', 'text-white', 'border-cyan-500/50');
                     link.classList.remove('text-neutral-300', 'border-transparent');
-                    // Update icon color
-                    const svg = link.querySelector('svg');
-                    if (svg) {
-                        svg.classList.add('text-cyan-300');
-                        svg.classList.remove('text-cyan-400', 'group-hover:text-cyan-300');
-                    }
+                    if (svg) { svg.classList.add('text-cyan-300'); svg.classList.remove('text-cyan-400', 'group-hover:text-cyan-300'); }
                 } else {
-                    // Remove active classes
                     link.classList.remove('bg-neutral-800', 'border-cyan-500/50');
                     link.classList.add('text-neutral-300', 'border-transparent');
-                    // Reset icon color
-                    const svg = link.querySelector('svg');
-                    if (svg) {
-                        svg.classList.remove('text-cyan-300');
-                        svg.classList.add('text-cyan-400', 'group-hover:text-cyan-300');
-                    }
+                    if (svg) { svg.classList.remove('text-cyan-300'); svg.classList.add('text-cyan-400', 'group-hover:text-cyan-300'); }
                 }
             });
         }
 
+        function setupPaginationLinks(container) {
+            container.querySelectorAll('a[href*="page="]').forEach(function(link) {
+                link.addEventListener('click', function(e) { e.preventDefault(); loadPage(this.getAttribute('href')); });
+            });
+        }
+
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const mainContainer = document.getElementById('main-container');
-            const sidebarTexts = document.querySelectorAll('.sidebar-text');
-            const menuIcon = document.getElementById('menu-icon');
+            var sidebar = document.getElementById('sidebar');
+            var mainContainer = document.getElementById('main-container');
+            var sidebarTexts = document.querySelectorAll('.sidebar-text');
+            var menuIcon = document.getElementById('menu-icon');
 
-            // Check if sidebar is currently collapsed (w-20)
             if (sidebar.classList.contains('w-20')) {
-                // Expand sidebar
-                sidebar.classList.remove('w-20');
-                sidebar.classList.add('w-64');
-                mainContainer.classList.remove('ml-20');
-                mainContainer.classList.add('ml-64');
-
-                // Show text labels
-                sidebarTexts.forEach(text => {
-                    text.classList.remove('opacity-0');
-                    text.classList.add('opacity-100');
-                });
-
+                sidebar.classList.remove('w-20'); sidebar.classList.add('w-64');
+                mainContainer.classList.remove('ml-20'); mainContainer.classList.add('ml-64');
+                sidebarTexts.forEach(function(t) { t.classList.remove('opacity-0'); t.classList.add('opacity-100'); });
                 menuIcon.style.transform = 'rotate(90deg)';
-
-                // Save expanded state to localStorage
                 localStorage.setItem('sidebarExpanded', 'true');
             } else {
-                // Collapse sidebar
-                sidebar.classList.remove('w-64');
-                sidebar.classList.add('w-20');
-                mainContainer.classList.remove('ml-64');
-                mainContainer.classList.add('ml-20');
-
-                // Hide text labels
-                sidebarTexts.forEach(text => {
-                    text.classList.remove('opacity-100');
-                    text.classList.add('opacity-0');
-                });
-
+                sidebar.classList.remove('w-64'); sidebar.classList.add('w-20');
+                mainContainer.classList.remove('ml-64'); mainContainer.classList.add('ml-20');
+                sidebarTexts.forEach(function(t) { t.classList.remove('opacity-100'); t.classList.add('opacity-0'); });
                 menuIcon.style.transform = 'rotate(0deg)';
-
-                // Save collapsed state to localStorage
                 localStorage.setItem('sidebarExpanded', 'false');
             }
         }

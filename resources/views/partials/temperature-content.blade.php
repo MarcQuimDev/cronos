@@ -1,16 +1,24 @@
 <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <!-- Chart Section -->
+    <!-- Date Picker + Chart Section -->
     <div class="px-4 sm:px-0 mb-6 animate-fade-in-up">
         <div class="bg-neutral-900 shadow-xl rounded-lg p-6 border border-neutral-800 hover:border-cyan-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/10">
-            <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11a4 4 0 104 4V6a2 2 0 10-4 0v5zm0 0a2 2 0 110 4m3-10h.01M12 2v1m0 3V5" />
-                </svg>
-                Evolució de la Temperatura
-            </h2>
+            <div class="flex items-center mb-4">
+                <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+                    <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 11a4 4 0 104 4V6a2 2 0 10-4 0v5zm0 0a2 2 0 110 4m3-10h.01M12 2v1m0 3V5" />
+                    </svg>
+                    Evolució de la Temperatura
+                </h2>
+            </div>
+            @if($chartData->count() > 0)
             <div class="relative h-80">
                 <canvas id="temperatureChart"></canvas>
             </div>
+            @else
+            <div class="flex items-center justify-center h-40 text-neutral-500">
+                <p>No hi ha dades per aquesta data</p>
+            </div>
+            @endif
         </div>
     </div>
 
@@ -90,37 +98,29 @@
     @endif
 </main>
 
+@if($chartData->count() > 0)
 <script>
 (function() {
-    // Prepare data for chart (use current page data, reversed for chronological order)
-    const temperatureData = @json($temperatureData->items());
+    const chartData = @json($chartData);
 
-    // Reverse data for chronological order (oldest to newest)
-    const reversedData = [...temperatureData].reverse();
-
-    const labels = reversedData.map(item => {
-        const date = new Date(item.timestamp);
-        return date.toLocaleString('ca-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    const labels = chartData.map(item => {
+        // Parse as UTC to avoid browser timezone offset
+        const parts = item.timestamp.split(/[- :T]/);
+        const h = parts[3].padStart(2, '0');
+        const m = parts[4].padStart(2, '0');
+        return h + ':' + m;
     });
 
-    const temperatures = reversedData.map(item => parseFloat(item.temperatura));
+    const temperatures = chartData.map(item => parseFloat(item.temperatura));
 
-    // Get or create canvas
     const ctx = document.getElementById('temperatureChart');
     if (!ctx) return;
 
-    // Destroy existing chart if it exists (prevents memory leaks)
     if (window.temperatureChartInstance) {
         window.temperatureChartInstance.destroy();
         window.temperatureChartInstance = null;
     }
 
-    // Create new chart with animations
     window.temperatureChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -136,9 +136,9 @@
                 pointBorderColor: 'rgb(34, 211, 238)',
                 pointHoverBackgroundColor: 'rgb(255, 255, 255)',
                 pointHoverBorderColor: 'rgb(34, 211, 238)',
-                pointRadius: 4,
+                pointRadius: temperatures.length > 100 ? 1 : 4,
                 pointHoverRadius: 7,
-                borderWidth: 3
+                borderWidth: temperatures.length > 100 ? 1.5 : 3
             }]
         },
         options: {
@@ -150,7 +150,7 @@
                 delay: (context) => {
                     let delay = 0;
                     if (context.type === 'data' && context.mode === 'default') {
-                        delay = context.dataIndex * 50;
+                        delay = context.dataIndex * (1000 / Math.max(temperatures.length, 1));
                     }
                     return delay;
                 }
@@ -190,8 +190,6 @@
             },
             scales: {
                 y: {
-                    min: 0,
-                    max: 35,
                     ticks: {
                         color: 'rgb(163, 163, 163)',
                         font: {
@@ -199,8 +197,7 @@
                         },
                         callback: function(value) {
                             return value + '°C';
-                        },
-                        stepSize: 5
+                        }
                     },
                     grid: {
                         color: 'rgba(64, 64, 64, 0.3)',
@@ -214,7 +211,9 @@
                             size: 11
                         },
                         maxRotation: 45,
-                        minRotation: 45
+                        minRotation: 45,
+                        autoSkip: true,
+                        maxTicksLimit: 24
                     },
                     grid: {
                         color: 'rgba(64, 64, 64, 0.2)',
@@ -230,3 +229,4 @@
     });
 })();
 </script>
+@endif

@@ -1,51 +1,38 @@
 <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <!-- Chart Section -->
     <div class="px-4 sm:px-0 mb-6 animate-fade-in-up">
         <div class="bg-neutral-900 shadow-xl rounded-lg p-6 border border-neutral-800 hover:border-violet-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-violet-500/10">
-            <h2 class="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                Evolució de la Pressió
-            </h2>
-            <div class="relative h-80">
-                <canvas id="pressureChart"></canvas>
+            <div class="flex items-center mb-4">
+                <h2 class="text-xl font-semibold text-white flex items-center gap-2">
+                    <svg class="w-6 h-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    Evolució de la Pressió
+                </h2>
             </div>
+            @if($selectedDate && $chartData->count() > 0)
+            <div class="relative h-80"><canvas id="pressureChart"></canvas></div>
+            @elseif(!$selectedDate)
+            <div class="flex items-center justify-center h-40 text-neutral-500"><p>Selecciona una data per veure la gràfica</p></div>
+            @else
+            <div class="flex items-center justify-center h-40 text-neutral-500"><p>No hi ha dades per aquesta data</p></div>
+            @endif
         </div>
     </div>
 
     <style>
-    @keyframes fade-in-up {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    .animate-fade-in-up {
-        animation: fade-in-up 0.6s ease-out;
-    }
+    @keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in-up { animation: fade-in-up 0.6s ease-out; }
     </style>
 
-    <!-- Data Table -->
     <div class="px-4 sm:px-0">
         <div class="bg-neutral-900 shadow-xl rounded-lg overflow-hidden border border-neutral-800">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-neutral-800">
                     <thead class="bg-black/30">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                Presió (hPa)
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                Ubicació
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">
-                                Data/Hora
-                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Presió (hPa)</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Ubicació</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Data/Hora</th>
                         </tr>
                     </thead>
                     <tbody class="bg-neutral-900 divide-y divide-neutral-800">
@@ -60,19 +47,11 @@
                                     {{ number_format($data->pressio, 2) }} hPa
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">
-                                {{ $data->location ?? 'N/A' }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">
-                                {{ $data->timestamp ? date('d/m/Y H:i:s', strtotime($data->timestamp)) : 'N/A' }}
-                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">{{ $data->location ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-300">{{ $data->timestamp ? date('d/m/Y H:i:s', strtotime($data->timestamp)) : 'N/A' }}</td>
                         </tr>
                         @empty
-                        <tr>
-                            <td colspan="3" class="px-6 py-8 text-center text-sm text-neutral-500">
-                                No hi ha dades de pressió disponibles
-                            </td>
-                        </tr>
+                        <tr><td colspan="3" class="px-6 py-8 text-center text-sm text-neutral-500">No hi ha dades de pressió disponibles</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -80,153 +59,31 @@
         </div>
     </div>
 
-    <!-- Pagination -->
     @if($pressureData->hasPages())
-    <div class="px-4 sm:px-0 mt-6">
-        <div class="bg-neutral-900 shadow-xl rounded-lg p-4 border border-neutral-800">
-            {{ $pressureData->links() }}
-        </div>
-    </div>
+    <div class="px-4 sm:px-0 mt-6"><div class="bg-neutral-900 shadow-xl rounded-lg p-4 border border-neutral-800">{{ $pressureData->links() }}</div></div>
     @endif
 </main>
 
+@if($selectedDate && $chartData->count() > 0)
 <script>
 (function() {
-    // Prepare data for chart (use current page data, reversed for chronological order)
-    const pressureData = @json($pressureData->items());
-
-    // Reverse data for chronological order (oldest to newest)
-    const reversedData = [...pressureData].reverse();
-
-    const labels = reversedData.map(item => {
-        const date = new Date(item.timestamp);
-        return date.toLocaleString('ca-ES', {
-            day: '2-digit',
-            month: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    });
-
-    const pressures = reversedData.map(item => parseFloat(item.pressio));
-
-    // Get or create canvas
+    const chartData = @json($chartData);
+    const labels = chartData.map(item => { const p = item.timestamp.split(/[- :T]/); return p[3].padStart(2,'0') + ':' + p[4].padStart(2,'0'); });
+    const values = chartData.map(item => parseFloat(item.pressio));
     const ctx = document.getElementById('pressureChart');
     if (!ctx) return;
-
-    // Destroy existing chart if it exists (prevents memory leaks)
-    if (window.pressureChartInstance) {
-        window.pressureChartInstance.destroy();
-        window.pressureChartInstance = null;
-    }
-
-    // Create new chart with animations
+    if (window.pressureChartInstance) { window.pressureChartInstance.destroy(); window.pressureChartInstance = null; }
     window.pressureChartInstance = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Pressió (hPa)',
-                data: pressures,
-                borderColor: 'rgb(167, 139, 250)',
-                backgroundColor: 'rgba(167, 139, 250, 0.1)',
-                tension: 0.4,
-                fill: true,
-                pointBackgroundColor: 'rgb(167, 139, 250)',
-                pointBorderColor: 'rgb(167, 139, 250)',
-                pointHoverBackgroundColor: 'rgb(255, 255, 255)',
-                pointHoverBorderColor: 'rgb(167, 139, 250)',
-                pointRadius: 4,
-                pointHoverRadius: 7,
-                borderWidth: 3
-            }]
-        },
+        data: { labels, datasets: [{ label: 'Pressió (hPa)', data: values, borderColor: 'rgb(167,139,250)', backgroundColor: 'rgba(167,139,250,0.1)', tension: 0.4, fill: true, pointBackgroundColor: 'rgb(167,139,250)', pointBorderColor: 'rgb(167,139,250)', pointHoverBackgroundColor: 'rgb(255,255,255)', pointHoverBorderColor: 'rgb(167,139,250)', pointRadius: values.length > 100 ? 1 : 4, pointHoverRadius: 7, borderWidth: values.length > 100 ? 1.5 : 3 }] },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: 2000,
-                easing: 'easeInOutQuart',
-                delay: (context) => {
-                    let delay = 0;
-                    if (context.type === 'data' && context.mode === 'default') {
-                        delay = context.dataIndex * 50;
-                    }
-                    return delay;
-                }
-            },
-            plugins: {
-                legend: {
-                    display: true,
-                    labels: {
-                        color: 'rgb(212, 212, 212)',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(23, 23, 23, 0.95)',
-                    titleColor: 'rgb(167, 139, 250)',
-                    bodyColor: 'rgb(212, 212, 212)',
-                    borderColor: 'rgb(167, 139, 250)',
-                    borderWidth: 2,
-                    padding: 12,
-                    displayColors: false,
-                    titleFont: {
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        size: 13
-                    },
-                    callbacks: {
-                        label: function(context) {
-                            return 'Pressió: ' + context.parsed.y.toFixed(2) + ' hPa';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    min: 950,
-                    max: 1050,
-                    ticks: {
-                        color: 'rgb(163, 163, 163)',
-                        font: {
-                            size: 12
-                        },
-                        callback: function(value) {
-                            return value + ' hPa';
-                        },
-                        stepSize: 10
-                    },
-                    grid: {
-                        color: 'rgba(64, 64, 64, 0.3)',
-                        drawBorder: false
-                    }
-                },
-                x: {
-                    ticks: {
-                        color: 'rgb(163, 163, 163)',
-                        font: {
-                            size: 11
-                        },
-                        maxRotation: 45,
-                        minRotation: 45
-                    },
-                    grid: {
-                        color: 'rgba(64, 64, 64, 0.2)',
-                        drawBorder: false
-                    }
-                }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index'
-            }
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 2000, easing: 'easeInOutQuart', delay: (ctx) => ctx.type === 'data' && ctx.mode === 'default' ? ctx.dataIndex * (1000/Math.max(values.length,1)) : 0 },
+            plugins: { legend: { display: true, labels: { color: 'rgb(212,212,212)', font: { size: 14, weight: 'bold' } } }, tooltip: { backgroundColor: 'rgba(23,23,23,0.95)', titleColor: 'rgb(167,139,250)', bodyColor: 'rgb(212,212,212)', borderColor: 'rgb(167,139,250)', borderWidth: 2, padding: 12, displayColors: false, titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 13 }, callbacks: { label: (ctx) => 'Pressió: ' + ctx.parsed.y.toFixed(2) + ' hPa' } } },
+            scales: { y: { min: 950, max: 1050, ticks: { color: 'rgb(163,163,163)', font: { size: 12 }, callback: (v) => v + ' hPa', stepSize: 10 }, grid: { color: 'rgba(64,64,64,0.3)', drawBorder: false } }, x: { ticks: { color: 'rgb(163,163,163)', font: { size: 11 }, maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 24 }, grid: { color: 'rgba(64,64,64,0.2)', drawBorder: false } } },
+            interaction: { intersect: false, mode: 'index' }
         }
     });
 })();
 </script>
+@endif

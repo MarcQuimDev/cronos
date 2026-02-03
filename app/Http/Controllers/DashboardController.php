@@ -62,213 +62,92 @@ class DashboardController extends Controller
         }
     }
 
-    public function temperature(Request $request)
+    private function sensorPage(Request $request, string $field, string $viewName, string $varName, string $title)
     {
-        // Validate pagination parameters to prevent abuse
         $validated = $request->validate([
             'page' => 'sometimes|integer|min:1|max:10000',
+            'date' => 'sometimes|date_format:Y-m-d',
         ]);
 
         try {
-            // Get paginated temperature data (50 per page for better performance)
-            $temperatureData = SensorData::whereNotNull('temperatura')
-                ->orderBy('timestamp', 'desc')
-                ->paginate(50);
+            $selectedDate = $request->input('date');
 
-            // If AJAX request, return only content partial with title
+            if ($selectedDate) {
+                // When date selected: get ALL data for that day (no pagination) for full chart
+                $chartData = SensorData::whereNotNull($field)
+                    ->whereDate('timestamp', $selectedDate)
+                    ->orderBy('timestamp', 'asc')
+                    ->get();
+            } else {
+                $chartData = collect();
+            }
+
+            // Table data only shown when date is selected
+            if ($selectedDate) {
+                $tableData = SensorData::whereNotNull($field)
+                    ->whereDate('timestamp', $selectedDate)
+                    ->orderBy('timestamp', 'desc')
+                    ->paginate(50)
+                    ->appends(['date' => $selectedDate]);
+            } else {
+                $tableData = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
+            }
+
+            $viewData = [
+                $varName => $tableData,
+                'chartData' => $chartData,
+                'selectedDate' => $selectedDate,
+            ];
+
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
-                    'title' => 'Dades de Temperatura',
-                    'content' => view('partials.temperature-content', compact('temperatureData'))->render()
+                    'title' => $title,
+                    'content' => view("partials.{$viewName}-content", $viewData)->render()
                 ]);
             }
 
-            return view('temperature', compact('temperatureData'));
+            // Non-AJAX: redirect to dashboard with page indicator so the main layout always loads
+            return redirect("/?load={$viewName}");
         } catch (\Exception $e) {
-            \Log::error('Error loading temperature data: ' . $e->getMessage());
+            \Log::error("Error loading {$viewName} data: " . $e->getMessage());
 
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
-                    'error' => 'Error carregant les dades de temperatura'
+                    'error' => "Error carregant les dades"
                 ], 500);
             }
 
-            return back()->with('error', 'Error carregant les dades de temperatura');
+            return back()->with('error', "Error carregant les dades");
         }
+    }
+
+    public function temperature(Request $request)
+    {
+        return $this->sensorPage($request, 'temperatura', 'temperature', 'temperatureData', 'Dades de Temperatura');
     }
 
     public function humidity(Request $request)
     {
-        // Validate pagination parameters to prevent abuse
-        $validated = $request->validate([
-            'page' => 'sometimes|integer|min:1|max:10000',
-        ]);
-
-        try {
-            // Get paginated humidity data (50 per page for better performance)
-            $humidityData = SensorData::whereNotNull('humitat')
-                ->orderBy('timestamp', 'desc')
-                ->paginate(50);
-
-            // If AJAX request, return only content partial with title
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'title' => 'Dades d\'Humitat',
-                    'content' => view('partials.humidity-content', compact('humidityData'))->render()
-                ]);
-            }
-
-            return view('humidity', compact('humidityData'));
-        } catch (\Exception $e) {
-            \Log::error('Error loading humidity data: ' . $e->getMessage());
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'error' => 'Error carregant les dades d\'humitat'
-                ], 500);
-            }
-
-            return back()->with('error', 'Error carregant les dades d\'humitat');
-        }
+        return $this->sensorPage($request, 'humitat', 'humidity', 'humidityData', 'Dades d\'Humitat');
     }
 
     public function pressure(Request $request)
     {
-        // Validate pagination parameters to prevent abuse
-        $validated = $request->validate([
-            'page' => 'sometimes|integer|min:1|max:10000',
-        ]);
-
-        try {
-            // Get paginated pressure data (50 per page for better performance)
-            $pressureData = SensorData::whereNotNull('pressio')
-                ->orderBy('timestamp', 'desc')
-                ->paginate(50);
-
-            // If AJAX request, return only content partial with title
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'title' => 'Dades de Pressió',
-                    'content' => view('partials.pressure-content', compact('pressureData'))->render()
-                ]);
-            }
-
-            return view('pressure', compact('pressureData'));
-        } catch (\Exception $e) {
-            \Log::error('Error loading pressure data: ' . $e->getMessage());
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'error' => 'Error carregant les dades de pressió'
-                ], 500);
-            }
-
-            return back()->with('error', 'Error carregant les dades de pressió');
-        }
+        return $this->sensorPage($request, 'pressio', 'pressure', 'pressureData', 'Dades de Pressió');
     }
 
     public function brightness(Request $request)
     {
-        // Validate pagination parameters to prevent abuse
-        $validated = $request->validate([
-            'page' => 'sometimes|integer|min:1|max:10000',
-        ]);
-
-        try {
-            // Get paginated brightness data (50 per page for better performance)
-            $brightnessData = SensorData::whereNotNull('brillantor')
-                ->orderBy('timestamp', 'desc')
-                ->paginate(50);
-
-            // If AJAX request, return only content partial with title
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'title' => 'Dades de Brillantor',
-                    'content' => view('partials.brightness-content', compact('brightnessData'))->render()
-                ]);
-            }
-
-            return view('brightness', compact('brightnessData'));
-        } catch (\Exception $e) {
-            \Log::error('Error loading brightness data: ' . $e->getMessage());
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'error' => 'Error carregant les dades de brillantor'
-                ], 500);
-            }
-
-            return back()->with('error', 'Error carregant les dades de brillantor');
-        }
+        return $this->sensorPage($request, 'brillantor', 'brightness', 'brightnessData', 'Dades de Brillantor');
     }
 
     public function co2(Request $request)
     {
-        // Validate pagination parameters to prevent abuse
-        $validated = $request->validate([
-            'page' => 'sometimes|integer|min:1|max:10000',
-        ]);
-
-        try {
-            // Get paginated CO2 data (50 per page for better performance)
-            $co2Data = SensorData::whereNotNull('eco2')
-                ->orderBy('timestamp', 'desc')
-                ->paginate(50);
-
-            // If AJAX request, return only content partial with title
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'title' => 'Dades de CO2',
-                    'content' => view('partials.co2-content', compact('co2Data'))->render()
-                ]);
-            }
-
-            return view('co2', compact('co2Data'));
-        } catch (\Exception $e) {
-            \Log::error('Error loading CO2 data: ' . $e->getMessage());
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'error' => 'Error carregant les dades de CO2'
-                ], 500);
-            }
-
-            return back()->with('error', 'Error carregant les dades de CO2');
-        }
+        return $this->sensorPage($request, 'eco2', 'co2', 'co2Data', 'Dades de CO2');
     }
 
     public function tvoc(Request $request)
     {
-        // Validate pagination parameters to prevent abuse
-        $validated = $request->validate([
-            'page' => 'sometimes|integer|min:1|max:10000',
-        ]);
-
-        try {
-            // Get paginated TVOC data (50 per page for better performance)
-            $tvocData = SensorData::whereNotNull('tvoc')
-                ->orderBy('timestamp', 'desc')
-                ->paginate(50);
-
-            // If AJAX request, return only content partial with title
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'title' => 'Dades de TVOC',
-                    'content' => view('partials.tvoc-content', compact('tvocData'))->render()
-                ]);
-            }
-
-            return view('tvoc', compact('tvocData'));
-        } catch (\Exception $e) {
-            \Log::error('Error loading TVOC data: ' . $e->getMessage());
-
-            if ($request->ajax() || $request->wantsJson()) {
-                return response()->json([
-                    'error' => 'Error carregant les dades de TVOC'
-                ], 500);
-            }
-
-            return back()->with('error', 'Error carregant les dades de TVOC');
-        }
+        return $this->sensorPage($request, 'tvoc', 'tvoc', 'tvocData', 'Dades de TVOC');
     }
 }
