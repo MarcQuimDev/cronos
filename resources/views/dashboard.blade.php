@@ -136,6 +136,7 @@
         // ── Date Modal (created dynamically via JS) ──
         let _dateModalEl = null;
         let _dateModalMandatory = false;
+        let _pendingAutoLoad = null;
 
         function _createDateModal() {
             if (_dateModalEl) return _dateModalEl;
@@ -285,7 +286,7 @@
             });
         }
 
-        function hideDateModal() {
+        function hideDateModal(skipAutoLoad) {
             if (_dateModalMandatory && !localStorage.getItem('selectedDate')) return;
 
             const overlay = document.getElementById('dateModalOverlay');
@@ -306,6 +307,14 @@
 
             _dateModalMandatory = false;
             setTimeout(function() { overlay.style.display = 'none'; }, 500);
+
+            // If dismissed via backdrop/Escape on an autoLoad redirect, load the page with existing date
+            if (!skipAutoLoad && _pendingAutoLoad && localStorage.getItem('selectedDate')) {
+                var autoLoad = _pendingAutoLoad;
+                _pendingAutoLoad = null;
+                history.replaceState({ url: '/' + autoLoad }, '', '/' + autoLoad);
+                loadPage('/' + autoLoad);
+            }
         }
 
         function confirmDateModal() {
@@ -316,10 +325,10 @@
             localStorage.setItem('selectedDate', date);
             updateChangeDateBtn(date);
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const autoLoad = urlParams.get('load');
+            var autoLoad = _pendingAutoLoad;
+            _pendingAutoLoad = null;
 
-            hideDateModal();
+            hideDateModal(true);
 
             if (autoLoad) {
                 history.replaceState({ url: '/' + autoLoad }, '', '/' + autoLoad);
@@ -365,19 +374,18 @@
             sidebar.classList.remove('pre-render');
             mainContainer.classList.remove('pre-render');
 
+            const urlParams = new URLSearchParams(window.location.search);
+            _pendingAutoLoad = urlParams.get('load');
+
             setupAjaxNavigation();
 
             const savedDate = localStorage.getItem('selectedDate');
             updateChangeDateBtn(savedDate);
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const autoLoad = urlParams.get('load');
-
             if (!savedDate) {
                 showDateModal(true);
-            } else if (autoLoad) {
-                history.replaceState({ url: '/' + autoLoad }, '', '/' + autoLoad);
-                loadPage('/' + autoLoad);
+            } else if (_pendingAutoLoad) {
+                showDateModal(false);
             }
         });
 
