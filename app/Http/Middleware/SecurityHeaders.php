@@ -32,17 +32,19 @@ class SecurityHeaders
         // Permissions Policy (formerly Feature Policy)
         $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 
-        // Content Security Policy
-        $csp = [
-            "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
-            "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data: https:",
-            "font-src 'self' data:",
-            "connect-src 'self'",
-            "frame-ancestors 'self'",
-        ];
-        $response->headers->set('Content-Security-Policy', implode('; ', $csp));
+        // Content Security Policy (skip in local to allow Vite dev server)
+        if (!app()->environment('local')) {
+            $csp = [
+                "default-src 'self'",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+                "style-src 'self' 'unsafe-inline'",
+                "img-src 'self' data: https:",
+                "font-src 'self' data:",
+                "connect-src 'self' https://cdn.jsdelivr.net",
+                "frame-ancestors 'self'",
+            ];
+            $response->headers->set('Content-Security-Policy', implode('; ', $csp));
+        }
 
         // HSTS (HTTP Strict Transport Security) - Only for HTTPS
         if ($request->secure()) {
