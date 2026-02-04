@@ -80,7 +80,7 @@
             responsive: true, maintainAspectRatio: false,
             animation: { duration: 2000, easing: 'easeInOutQuart', delay: (ctx) => ctx.type === 'data' && ctx.mode === 'default' ? ctx.dataIndex * (1000/Math.max(values.length,1)) : 0 },
             plugins: { legend: { display: true, labels: { color: 'rgb(212,212,212)', font: { size: 14, weight: 'bold' } } }, tooltip: { backgroundColor: 'rgba(23,23,23,0.95)', titleColor: 'rgb(34,211,238)', bodyColor: 'rgb(212,212,212)', borderColor: 'rgb(34,211,238)', borderWidth: 2, padding: 12, displayColors: false, titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 13 }, callbacks: { label: (ctx) => 'CO2: ' + ctx.parsed.y.toFixed(0) + ' ppm' } } },
-            scales: { y: { min: 400, max: 5000, ticks: { color: 'rgb(163,163,163)', font: { size: 12 }, callback: (v) => v + ' ppm', stepSize: 200 }, grid: { color: 'rgba(64,64,64,0.3)', drawBorder: false } }, x: { ticks: { color: 'rgb(163,163,163)', font: { size: 11 }, maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 24 }, grid: { color: 'rgba(64,64,64,0.2)', drawBorder: false } } },
+            scales: { y: { min: 400, max: 6500, ticks: { color: 'rgb(163,163,163)', font: { size: 12 }, callback: (v) => v + ' ppm', stepSize: 200 }, grid: { color: 'rgba(64,64,64,0.3)', drawBorder: false } }, x: { ticks: { color: 'rgb(163,163,163)', font: { size: 11 }, maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 24 }, grid: { color: 'rgba(64,64,64,0.2)', drawBorder: false } } },
             interaction: { intersect: false, mode: 'index' }
         }
     });
