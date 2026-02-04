@@ -80,7 +80,7 @@
             responsive: true, maintainAspectRatio: false,
             animation: { duration: 2000, easing: 'easeInOutQuart', delay: (ctx) => ctx.type === 'data' && ctx.mode === 'default' ? ctx.dataIndex * (1000/Math.max(values.length,1)) : 0 },
             plugins: { legend: { display: true, labels: { color: 'rgb(212,212,212)', font: { size: 14, weight: 'bold' } } }, tooltip: { backgroundColor: 'rgba(23,23,23,0.95)', titleColor: 'rgb(192,132,252)', bodyColor: 'rgb(212,212,212)', borderColor: 'rgb(192,132,252)', borderWidth: 2, padding: 12, displayColors: false, titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 13 }, callbacks: { label: (ctx) => 'TVOC: ' + ctx.parsed.y.toFixed(0) + ' ppb' } } },
-            scales: { y: { min: 0, max: 5100, ticks: { color: 'rgb(163,163,163)', font: { size: 12 }, callback: (v) => v + ' ppb', stepSize: 200 }, grid: { color: 'rgba(64,64,64,0.3)', drawBorder: false } }, x: { ticks: { color: 'rgb(163,163,163)', font: { size: 11 }, maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 24 }, grid: { color: 'rgba(64,64,64,0.2)', drawBorder: false } } },
+            scales: { y: { min: 0, max: 6500, ticks: { color: 'rgb(163,163,163)', font: { size: 12 }, callback: (v) => v + ' ppb', stepSize: 200 }, grid: { color: 'rgba(64,64,64,0.3)', drawBorder: false } }, x: { ticks: { color: 'rgb(163,163,163)', font: { size: 11 }, maxRotation: 45, minRotation: 45, autoSkip: true, maxTicksLimit: 24 }, grid: { color: 'rgba(64,64,64,0.2)', drawBorder: false } } },
             interaction: { intersect: false, mode: 'index' }
         }
     });
