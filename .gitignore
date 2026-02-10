@@ -27,3 +27,4 @@ main.cpp
 n8n.json
 mqtt.json
 mqtt_publisher.py
+CLAUDE.md
